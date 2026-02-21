@@ -10,6 +10,7 @@ import {
     ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { supabase } from "@/lib/supabase";
 
 interface FormValues {
     fullName: string;
@@ -93,6 +94,10 @@ export default function SignUpScreen() {
 
         try {
             // TODO: Call the backend to register a user
+            const { data, error } = await supabase.auth.signUp({
+                email: values.email,
+                password: values.password
+            });
             router.replace("/(auth)/signin");
         } catch (error) {
             Alert.alert("Sign Up Failed", "Something went wrong. Please try again.");

@@ -1,31 +1,12 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
-import { View, Text, StyleSheet, FlatList } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
-export default function CreateScreen() {
-    const [names, setNames] = useState<{ id: number; name: string }[]>([]);
-    
-    useEffect(() => {
-        supabaseTest()
-    }, []);
-
-    async function supabaseTest() {
-        const { data } = await supabase.from('test').select();
-        setNames(data ?? []);
-    }
-
+export default function CalendarScreen() {
     return (
         <View style={styles.container}>
-            <FlatList
-                data={names}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                <Text style={styles.item}>{item.name}</Text>
-                )}
-            />
+            <Text style={styles.label}>This is where the interactive calendar will be placed.</Text>
         </View>
     )
-};
+}
 
 const styles = StyleSheet.create({
     container: { flexGrow: 1, justifyContent: "center", padding: 24 },
@@ -38,5 +19,4 @@ const styles = StyleSheet.create({
     button: { backgroundColor: "#4A90E2", padding: 14, borderRadius: 8, alignItems: "center", marginTop: 8, marginBottom: 16 },
     buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
     linkText: { textAlign: "center", color: "#4A90E2" },
-    item: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#ccc' },
 });
