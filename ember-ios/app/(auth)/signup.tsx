@@ -96,7 +96,14 @@ export default function SignUpScreen() {
             // TODO: Call the backend to register a user
             const { data, error } = await supabase.auth.signUp({
                 email: values.email,
-                password: values.password
+                password: values.password,
+                options: {
+                    data: {
+                        email: values.email,
+                        full_name: values.fullName,
+                        username: values.username
+                    }
+                }
             });
             router.replace("/(auth)/signin");
         } catch (error) {
