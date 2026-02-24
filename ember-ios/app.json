@@ -47,7 +47,8 @@
           "configureAndroidBackup": true,
           "faceIDPermission": "Allow Ember to access your Face ID biometric data."
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

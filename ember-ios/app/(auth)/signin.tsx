@@ -9,14 +9,15 @@ import {
     ActivityIndicator,
     Alert,
 } from "react-native";
+import { supabase } from "@/lib/supabase";
 
 interface FormValues {
-    username: string;
+    email: string;
     password: string;
 }
 
 interface FormErrors {
-    username?: string,
+    email?: string,
     password?: string
 }
 
@@ -27,14 +28,14 @@ interface FormErrors {
  */
 function validate(values: FormValues): FormErrors {
     const errors: FormErrors = {}
-    if (!values.username.trim()) errors.username = "Username is required!";
+    if (!values.email.trim()) errors.email = "Email is required!";
     if (!values.password) errors.password = "Password is required!";
     return errors;
 }
 
 export default function SignInScreen() {
     const router = useRouter()
-    const [values, setValues] = useState<FormValues>({ username: '', password: '' });
+    const [values, setValues] = useState<FormValues>({ email: '', password: '' });
     const [errors, setErrors] = useState<FormErrors>();
     const [loading, setLoading] = useState(false);
 
@@ -54,9 +55,15 @@ export default function SignInScreen() {
         setLoading(true)
         try {
             // TODO: Request the backend to check credentials
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: values.email,
+                password: values.password
+            })
+            const message = data.user?.email || "User not found";
+            Alert.alert(message);
             router.replace("/(tabs)");
         } catch (error) {
-            Alert.alert("Sign In Failed!", "Invalid username or password")
+            Alert.alert("Sign In Failed!", "Invalid email or password");
         } finally {
             setLoading(false)
         }
@@ -66,17 +73,17 @@ export default function SignInScreen() {
         <View style={styles.container}>
         <Text style={styles.title}>Sign In</Text>
 
-        {/* Username */}
-        <Text style={styles.label}>Username</Text>
+        {/* Email */}
+        <Text style={styles.label}>Email</Text>
         <TextInput
-            style={[styles.input, errors?.username ? styles.inputError : null]}
-            placeholder="Enter your username"
+            style={[styles.input, errors?.email ? styles.inputError : null]}
+            placeholder="Enter your email"
             autoCapitalize="none"
             autoCorrect={false}
-            value={values.username}
-            onChangeText={(text) => handleChange("username", text)}
+            value={values.email}
+            onChangeText={(text) => handleChange("email", text)}
         />
-        {errors?.username && <Text style={styles.errorText}>{errors.username}</Text>}
+        {errors?.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
         {/* Password */}
         <Text style={styles.label}>Password</Text>
