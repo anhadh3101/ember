@@ -59,8 +59,10 @@ export default function SignInScreen() {
                 email: values.email,
                 password: values.password
             })
-            const message = data.user?.email || "User not found";
-            Alert.alert(message);
+            
+            if (error) {
+                throw error;
+            }
             router.replace("/(tabs)");
         } catch (error) {
             Alert.alert("Sign In Failed!", "Invalid email or password");
