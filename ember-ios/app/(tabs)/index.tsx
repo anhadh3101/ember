@@ -1,6 +1,6 @@
 import { Image } from 'expo-image'
-import { StyleSheet, Alert, View, Text } from 'react-native'
-import { useCallback, useState } from 'react'
+import { StyleSheet, Alert, View, Text, TouchableOpacity } from 'react-native'
+import { useCallback, useRef, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
 import ParallaxScrollView from '@/components/parallax-scroll-view'
 import { ThemedText } from '@/components/themed-text'
@@ -8,7 +8,8 @@ import { ThemedView } from '@/components/themed-view'
 import SignOutButton from '@/components/social-auth-buttons/sign-out-button'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { DoublyLinkedList } from '@/lib/doublyLinkedList'
+import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler'
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
 
 const PRIORITY_COLORS: Record<string, string> = {
     LOW: '#22c55e',
@@ -17,7 +18,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 }
 
 type Task = {
-    id: string
+    task_id: string
     title: string
     description: string
     priority: string
@@ -29,22 +30,92 @@ type Task = {
 
 export default function HomeScreen() {
     const { session } = useAuthContext()
-    const dateToday = new Date().toISOString().split('T')[0];
+
+    const now = new Date();
+    const dateToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     const [todoTasks, setTodoTasks] = useState<Task[]>([]);
     const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
 
-    const updateTasks: Task[] = [];
-    const deleteTasks: String[] = [];
+    const updateBatch = useRef<Map<string, string>>(new Map());
+    const deleteBatch = useRef<Map<String, String>>(new Map());
 
-    // This function will save the update and delete query.
-    function saveUpdateQuery(task_id: string) {
-        // if 
-        // updateTasks.push(
-        //     {
-        //         id: task_id,
-        //         status: 'COMPLETED'
-        //     }
-        // );
+    const byTime = (a: Task, b: Task) => a.due_time.localeCompare(b.due_time);
+
+    // This function will save the update query params.
+    function addToUpdateBatch(task_id: string, newStatus: string) {
+        if (updateBatch.current.has(task_id)) {
+            // Remove the task from the batch
+            updateBatch.current.delete(task_id);
+        } else {
+            // Add the task to the batch
+            updateBatch.current.set(task_id, newStatus);
+        }
+    }
+    
+    async function addToDeleteBatch(task_id: string) {
+        // Remove the task from the list and if it is present in the updates batch.
+        setTodoTasks(prev => prev.filter(t => t.task_id !== task_id));
+        setCompletedTasks(prev => prev.filter(t => t.task_id !== task_id));
+        updateBatch.current.delete(task_id);
+
+        if (!deleteBatch.current.has(task_id)) {
+            // Add the task to the batch
+            deleteBatch.current.set(task_id, task_id);
+        }
+        console.log("[(/(tabs)/index.tsx) addToDeleteBatch] Task ID added to delete batch: ", task_id);
+    }
+
+    function renderDeleteAction(task: Task) {
+        return (
+            <TouchableOpacity style={styles.deleteButton} onPress={() => addToDeleteBatch(task.task_id)}>
+                <Text style={styles.deleteText}>Delete</Text>
+            </TouchableOpacity>
+        );
+    }
+
+    // function to push updates to Supabase
+    async function pushUpdatesBatch() {
+        try {
+            for (const [task_id, newStatus] of updateBatch.current) {
+                console.log(`[((tabs)/index.tsx) pushUpdatesBatch] Updating task ${task_id} with status ${newStatus}`);
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .update([{ 
+                        status: newStatus,
+                        updated_at: new Date().toISOString() 
+                    }])
+                    .eq('task_id', task_id);
+                if (error)
+                    throw error;
+
+                console.log(`[((tabs)/index.tsx) pushUpdatesBatch] Updated task ${task_id} with status ${newStatus}`);
+            }
+            updateBatch.current.clear();
+        } catch (error) {
+            console.log(error);
+            Alert.alert("Error", "Something went wrong. Please try again.");
+        }
+    }
+
+    async function pushDeletesBatch() {
+        try {
+            for (const task_id of deleteBatch.current.keys()) {
+                console.log(`[((tabs)/index.tsx) pushDeletesBatch] Deleting task ${task_id}`);
+                const { data, error } = await supabase
+                    .from('tasks')
+                    .delete()
+                    .eq('task_id', task_id);
+                if (error)
+                    throw error;
+
+                console.log(`[((tabs)/index.tsx) pushDeletesBatch] Deleted task ${task_id}`);
+            }
+            deleteBatch.current.clear();
+        } catch (error) {
+            console.log(error);
+            Alert.alert("Error", "Something went wrong. Please try again.");
+        }
     }
 
     async function fetchTasks() {
@@ -57,7 +128,6 @@ export default function HomeScreen() {
             if (error)
                 throw error;
 
-            const byTime = (a: Task, b: Task) => a.due_time.localeCompare(b.due_time);
             const sortedData = (data ?? []).sort(byTime);
             const list1 = sortedData.filter((t) => t.status === 'TODO');
             const list2 = sortedData.filter((t) => t.status === 'COMPLETED');
@@ -71,84 +141,135 @@ export default function HomeScreen() {
     }
 
     // This function will change the status of task and move it between the two lists.
-    function changeStatus(task_id: string, list1: Task[], list2: Task[]) {
-        // 
+    async function changeTaskStatus(task: Task) {
+        const newStatus = task.status === 'TODO' ? 'COMPLETED' : 'TODO';
+        
+        const newTodo = [...todoTasks];
+        const newCompleted = [...completedTasks];
+
+        console.log("[(/(tabs)/index.tsx) changeTaskStatus] Task ID: ", task.task_id);
+
+        if (task.status === 'TODO') {
+            // Remove from todo
+            const removeIdx = newTodo.findIndex((t) => t.task_id === task.task_id);
+            if (removeIdx !== -1) newTodo.splice(removeIdx, 1);
+
+            // Insert into completed at the correct sorted position
+            const insertIdx = newCompleted.findIndex((t) => byTime(t, task) > 0);
+            if (insertIdx === -1) newCompleted.push({ ...task, status: newStatus });
+            else newCompleted.splice(insertIdx, 0, { ...task, status: newStatus });
+        } else {
+            // Remove from completed
+            const removeIdx = newCompleted.findIndex((t) => t.task_id === task.task_id);
+            if (removeIdx !== -1) newCompleted.splice(removeIdx, 1);
+
+            // Insert into todo at the correct sorted position
+            const insertIdx = newTodo.findIndex((t) => byTime(t, task) > 0);
+            if (insertIdx === -1) newTodo.push({ ...task, status: newStatus });
+            else newTodo.splice(insertIdx, 0, { ...task, status: newStatus });
+        }
+
+        setTodoTasks(newTodo);
+        setCompletedTasks(newCompleted);
+
+        // Add the task to the update batch
+        addToUpdateBatch(task.task_id, newStatus);
     }
+
+    const doubleTap = (task: Task) =>
+        Gesture.Tap()
+            .numberOfTaps(2)
+            .runOnJS(true)
+            .onEnd(() => {
+                console.log('Double tap: ', task);
+                changeTaskStatus(task)
+        });
 
     useFocusEffect(
         useCallback(() => {
             fetchTasks();
-
             return () => {
+                pushUpdatesBatch();
+                pushDeletesBatch();
                 console.log('Cleanup');
             }
         }, [session])
     );
 
     return (
-        <ParallaxScrollView
-            headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-            headerImage={
-                <Image
-                    source={require('@/assets/images/partial-react-logo.png')}
-                    style={styles.reactLogo}
-                />
-            }
-        >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <ParallaxScrollView
+                headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+                headerImage={
+                    <Image
+                        source={require('@/assets/images/partial-react-logo.png')}
+                        style={styles.reactLogo}
+                    />
+                }
+            >
 
-            <ThemedView style={styles.titleContainer}>
-                <ThemedText type="title">{dateToday}</ThemedText>
-            </ThemedView>
-
-            {todoTasks.length === 0 ? (
-                <ThemedView style={styles.empty}>
-                    <ThemedText style={styles.emptyText}>No tasks due today.</ThemedText>
+                <ThemedView style={styles.titleContainer}>
+                    <ThemedText type="title">{dateToday}</ThemedText>
                 </ThemedView>
-            ) : (
-                todoTasks.map((task, index) => (
-                    <View key={task.id ?? index} style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.taskTitle}>{task.title}</Text>
-                            <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[task.priority] ?? '#aaa' }]}>
-                                <Text style={styles.priorityText}>{task.priority}</Text>
-                            </View>
-                        </View>
-                        {task.description ? (
-                            <Text style={styles.description}>{task.description}</Text>
-                        ) : null}
-                        <View style={styles.cardFooter}>
-                            <Text style={styles.meta}>{task.category}</Text>
-                            <Text style={styles.meta}>{task.due_time?.slice(0, 5)}</Text>
-                        </View>
-                    </View>
-                ))
-            )}
 
-            {completedTasks.length === 0 ? (
-                <ThemedView style={styles.empty}>
-                    <ThemedText style={styles.emptyText}>No tasks due today.</ThemedText>
-                </ThemedView>
-            ) : (
-                todoTasks.map((task, index) => (
-                    <View key={task.id ?? index} style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.taskTitle}>{task.title}</Text>
-                            <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[task.priority] ?? '#aaa' }]}>
-                                <Text style={styles.priorityText}>{task.priority}</Text>
-                            </View>
-                        </View>
-                        {task.description ? (
-                            <Text style={styles.description}>{task.description}</Text>
-                        ) : null}
-                        <View style={styles.cardFooter}>
-                            <Text style={styles.meta}>{task.category}</Text>
-                            <Text style={styles.meta}>{task.due_time?.slice(0, 5)}</Text>
-                        </View>
-                    </View>
-                ))
-            )}
-            <SignOutButton />
-        </ParallaxScrollView>
+                {todoTasks.length === 0 ? (
+                    <ThemedView style={styles.empty}>
+                        <ThemedText style={styles.emptyText}>No tasks due today.</ThemedText>
+                    </ThemedView>
+                ) : (
+                    todoTasks.map((task, index) => (
+                        <ReanimatedSwipeable key={task.task_id ?? index} renderRightActions={() => renderDeleteAction(task)}>
+                            <GestureDetector gesture={doubleTap(task)}>
+                                <View style={styles.card}>
+                                    <View style={styles.cardHeader}>
+                                        <Text style={styles.taskTitle}>{task.title}</Text>
+                                        <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[task.priority] ?? '#aaa' }]}>
+                                            <Text style={styles.priorityText}>{task.priority}</Text>
+                                        </View>
+                                    </View>
+                                    {task.description ? (
+                                        <Text style={styles.description}>{task.description}</Text>
+                                    ) : null}
+                                    <View style={styles.cardFooter}>
+                                        <Text style={styles.meta}>{task.category}</Text>
+                                        <Text style={styles.meta}>{task.due_time?.slice(0, 5)}</Text>
+                                    </View>
+                                </View>
+                            </GestureDetector>
+                        </ReanimatedSwipeable>
+                    ))
+                )}
+
+                {completedTasks.length === 0 ? (
+                    <ThemedView style={styles.empty}>
+                        <ThemedText style={styles.emptyText}>No completed tasks today.</ThemedText>
+                    </ThemedView>
+                ) : (
+                    completedTasks.map((task, index) => (
+                        <ReanimatedSwipeable key={task.task_id ?? index} renderRightActions={() => renderDeleteAction(task)}>
+                            <GestureDetector gesture={doubleTap(task)}>
+                                <View style={styles.card}>
+                                    <View style={styles.cardHeader}>
+                                        <Text style={[styles.taskTitle, styles.strikethrough]}>{task.title}</Text>
+                                        <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[task.priority] ?? '#aaa' }]}>
+                                            <Text style={styles.priorityText}>{task.priority}</Text>
+                                        </View>
+                                    </View>
+                                    {task.description ? (
+                                        <Text style={styles.description}>{task.description}</Text>
+                                    ) : null}
+                                    <View style={styles.cardFooter}>
+                                        <Text style={styles.meta}>{task.category}</Text>
+                                        <Text style={styles.meta}>{task.due_time?.slice(0, 5)}</Text>
+                                    </View>
+                                </View>
+                            </GestureDetector>
+                        </ReanimatedSwipeable>
+                    ))
+                )}
+                <SignOutButton />
+            </ParallaxScrollView>
+        </GestureHandlerRootView>
     )
 }
 
@@ -218,5 +339,23 @@ const styles = StyleSheet.create({
     meta: {
         fontSize: 12,
         color: '#999',
+    },
+    strikethrough: {
+        textDecorationLine: 'line-through',
+        color: '#aaa',
+    },
+    deleteButton: {
+        backgroundColor: '#ef4444',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        borderRadius: 12,
+        marginBottom: 12,
+        marginLeft: 8,
+    },
+    deleteText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 13,
     },
 })
