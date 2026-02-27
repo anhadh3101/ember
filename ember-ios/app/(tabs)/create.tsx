@@ -1,24 +1,28 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "expo-router";
 import { useAuthContext } from "@/hooks/use-auth-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  Platform,
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+    StyleSheet,
+    Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
+import { useFocusEffect } from "expo-router";
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
 const CATEGORIES = ["PERSONAL", "WORK", "FITNESS"];
 const REMIND_OPTIONS = ["10m", "15m", "30m", "45m", "1h"];
 
 export default function CreateScreen() {
+    const now = new Date();
+    const dateToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
     const router = useRouter();
     const { session } = useAuthContext();
 
@@ -28,7 +32,7 @@ export default function CreateScreen() {
     const [priority, setPriority] = useState('MEDIUM');
     const [category, setCategory] = useState('PERSONAL');
 
-    const [dueDate, setDueDate] = useState(new Date());
+    const [dueDate, setDueDate] = useState(dateToday);
     const [dueTime, setDueTime] = useState(new Date());
     const [remindWhen, setRemindWhen] = useState("15m");
 
@@ -42,6 +46,8 @@ export default function CreateScreen() {
     const validate = () => {
         const e: Record<string, string> = {};
         if (!title.trim()) e.title = "Title is required.";
+        if (!description.trim()) e.description = "Description is required.";
+
         setErrors(e);
         return Object.keys(e).length === 0;
     };
@@ -57,8 +63,8 @@ export default function CreateScreen() {
             const {data, error} = await supabase.from("tasks").insert([{
                 title: task.title,
                 description: task.description,
-                due_date: task.dueDate.toISOString().split("T")[0],
-                due_time: task.dueTime.toTimeString().slice(0, 8),
+                due_date: task.dueDate,
+                due_time: `${String(task.dueTime.getHours()).padStart(2, '0')}:${String(task.dueTime.getMinutes()).padStart(2, '0')}:00`,
                 priority: task.priority,
                 category: task.category,
                 user_id: session?.user.id,
@@ -71,6 +77,7 @@ export default function CreateScreen() {
             router.replace("/(tabs)");
         } catch (error) {
             console.log(error);
+            setErrors({ general: "Something went wrong. Please try again." });
             return;
         }
     }
@@ -80,6 +87,20 @@ export default function CreateScreen() {
 
     const formatTime = (date: Date) =>
         date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+
+    useFocusEffect(
+        useCallback(() => {
+            return () => {
+                setTitle('');
+                setDescription('');
+                setPriority('MEDIUM');
+                setCategory('PERSONAL');
+                setDueDate(dateToday);
+                setDueTime(new Date());
+                setRemindWhen("15m");
+                console.log('Cleaning Create Tasks Page!');
+            }
+    }, [session]));
 
     return (
         <SafeAreaView style={s.safe}>
@@ -98,7 +119,7 @@ export default function CreateScreen() {
             <Text style={s.label}>Title *</Text>
             <TextInput
                 style={[s.input, errors.title && s.inputError]}
-                placeholder="e.g. Submit project report"
+                placeholder="e.g. Submit project report..."
                 placeholderTextColor="#aaa"
                 value={title}
                 onChangeText={(v) => { setTitle(v); clearError("title"); }}
@@ -110,15 +131,16 @@ export default function CreateScreen() {
             <View style={s.field}>
             <Text style={s.label}>Description</Text>
             <TextInput
-                style={[s.input, s.textarea]}
-                placeholder="Optional details..."
+                style={[s.input, s.textarea, errors.description && s.inputError]}
+                placeholder="Make an appointment with the client..."
                 placeholderTextColor="#aaa"
                 value={description}
-                onChangeText={setDescription}
+                onChangeText={(v) => { setDescription(v); clearError("description"); }}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
             />
+            {errors.description && <Text style={s.error}>{errors.description}</Text>}
             </View>
 
             {/* Category */}
@@ -162,7 +184,7 @@ export default function CreateScreen() {
             <Text style={s.label}>Due Date & Time</Text>
             <View style={s.row}>
                 <TouchableOpacity style={[s.input, s.dateBtn]} onPress={() => setShowDatePicker(true)}>
-                <Text style={s.dateText}>📅  {formatDate(dueDate)}</Text>
+                <Text style={s.dateText}>📅  {dueDate}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[s.input, s.dateBtn]} onPress={() => setShowTimePicker(true)}>
                 <Text style={s.dateText}>⏰  {formatTime(dueTime)}</Text>
@@ -196,12 +218,17 @@ export default function CreateScreen() {
         {/* Date Picker */}
         {showDatePicker && (
             <DateTimePicker
-            value={dueDate}
+            value={now}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
             onChange={(event, selected) => {
                 setShowDatePicker(Platform.OS === "ios");
-                if (selected) setDueDate(selected);
+                if (selected) {
+                    const y = selected.getFullYear();
+                    const m = String(selected.getMonth() + 1).padStart(2, '0');
+                    const d = String(selected.getDate()).padStart(2, '0');
+                    setDueDate(`${y}-${m}-${d}`);
+                }
                 if (Platform.OS === "android") setShowDatePicker(false);
             }}
             />

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { Platform, StyleSheet } from 'react-native';
-
+import SignOutButton from '@/components/social-auth-buttons/sign-out-button'
 import { Collapsible } from '@/components/ui/collapsible';
 import { ExternalLink } from '@/components/external-link';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -94,6 +94,7 @@ export default function TabTwoScreen() {
           ),
         })}
       </Collapsible>
+      <SignOutButton/>
     </ParallaxScrollView>
   );
 }
