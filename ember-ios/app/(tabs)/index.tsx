@@ -10,6 +10,7 @@ import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
+import { reload } from 'expo-router/build/global-state/routing'
 
 const PRIORITY_COLORS: Record<string, string> = {
     LOW: '#22c55e',
@@ -32,9 +33,10 @@ type TaskCardProps = {
     task: Task
     onStatusChange: (task: Task) => void
     onDelete: (task_id: string) => void
+    onEdit: (task: Task) => void
 }
 
-function TaskCard({ task, onStatusChange, onDelete }: TaskCardProps) {
+function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
     const lastTap = useRef(0);
 
     function handlePress() {
@@ -50,9 +52,14 @@ function TaskCard({ task, onStatusChange, onDelete }: TaskCardProps) {
     return (
         <ReanimatedSwipeable
             renderRightActions={() => (
-                <TouchableOpacity style={styles.deleteButton} onPress={() => onDelete(task.task_id)}>
-                    <Text style={styles.deleteText}>Delete</Text>
-                </TouchableOpacity>
+                <View style={styles.swipeActions}>
+                    <TouchableOpacity style={styles.editButton} onPress={() => onEdit(task)}>
+                        <Text style={styles.editText}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteButton} onPress={() => onDelete(task.task_id)}>
+                        <Text style={styles.deleteText}>Delete</Text>
+                    </TouchableOpacity>
+                </View>
             )}
         >
             <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.card}>
@@ -86,6 +93,7 @@ export default function HomeScreen() {
 
     const [todoTasks, setTodoTasks] = useState<Task[]>([]);
     const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
+    const [resetKey, setResetKey] = useState(0);
 
     const updateBatch = useRef<Map<string, string>>(new Map());
     const deleteBatch = useRef<Map<string, string>>(new Map());
@@ -124,6 +132,23 @@ export default function HomeScreen() {
             updateBatch.current.set(task.task_id, newStatus);
         }
     }, []);
+
+    const handleEdit = useCallback((task: Task) => {
+        router.push({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            pathname: '/(calendar)/edit' as any,
+            params: {
+                task_id: task.task_id,
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                category: task.category,
+                due_date: task.due_date,
+                due_time: task.due_time,
+                status: task.status,
+            },
+        });
+    }, [router]);
 
     // Stable callback — same pattern.
     const addToDeleteBatch = useCallback((task_id: string) => {
@@ -190,6 +215,7 @@ export default function HomeScreen() {
     useFocusEffect(
         useCallback(() => {
             fetchTasks();
+            setResetKey(k => k + 1);
             return () => {
                 pushUpdatesBatch();
                 pushDeletesBatch();
@@ -220,10 +246,11 @@ export default function HomeScreen() {
                 ) : (
                     todoTasks.map((task, index) => (
                         <TaskCard
-                            key={task.task_id ?? index}
+                            key={`${task.task_id ?? index}-${resetKey}`}
                             task={task}
                             onStatusChange={changeTaskStatus}
                             onDelete={addToDeleteBatch}
+                            onEdit={handleEdit}
                         />
                     ))
                 )}
@@ -235,10 +262,11 @@ export default function HomeScreen() {
                 ) : (
                     completedTasks.map((task, index) => (
                         <TaskCard
-                            key={task.task_id ?? index}
+                            key={`${task.task_id ?? index}-${resetKey}`}
                             task={task}
                             onStatusChange={changeTaskStatus}
                             onDelete={addToDeleteBatch}
+                            onEdit={handleEdit}
                         />
                     ))
                 )}
@@ -323,14 +351,31 @@ const styles = StyleSheet.create({
         textDecorationLine: 'line-through',
         color: '#aaa',
     },
+    swipeActions: {
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        marginBottom: 12,
+        marginLeft: 8,
+        gap: 8,
+    },
+    editButton: {
+        backgroundColor: '#3b82f6',
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 80,
+        borderRadius: 12,
+    },
+    editText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 13,
+    },
     deleteButton: {
         backgroundColor: '#ef4444',
         justifyContent: 'center',
         alignItems: 'center',
         width: 80,
         borderRadius: 12,
-        marginBottom: 12,
-        marginLeft: 8,
     },
     deleteText: {
         color: '#fff',
