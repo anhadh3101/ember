@@ -8,12 +8,12 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
-    StyleSheet,
     Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { useFocusEffect } from "expo-router";
+import { globalStyles, Palette } from "@/constants/styles";
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
 const CATEGORIES = ["PERSONAL", "WORK", "FITNESS"];
@@ -56,11 +56,11 @@ export default function CreateScreen() {
         // Validate the form fields.
         if (!validate()) return;
 
-        // Create the task object and insert it into the supabase 
+        // Create the task object and insert it into the supabase
         const task = { title, description, priority, category, dueDate, dueTime, remindWhen };
 
         try {
-            const {data, error} = await supabase.from("tasks").insert([{
+            const { error } = await supabase.from("tasks").insert([{
                 title: task.title,
                 description: task.description,
                 due_date: task.dueDate,
@@ -82,9 +82,6 @@ export default function CreateScreen() {
         }
     }
 
-    const formatDate = (date: Date) =>
-        date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-
     const formatTime = (date: Date) =>
         date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
@@ -103,57 +100,57 @@ export default function CreateScreen() {
     }, [session]));
 
     return (
-        <SafeAreaView style={s.safe}>
-        <ScrollView style={s.scrollView} contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+        <SafeAreaView style={globalStyles.safe}>
+        <ScrollView style={globalStyles.flex1} contentContainerStyle={globalStyles.formScroll} keyboardShouldPersistTaps="handled">
 
             {/* Header */}
-            <View style={s.header}>
+            <View style={globalStyles.formHeader}>
             <TouchableOpacity onPress={() => router.back()}>
-                <Text style={s.back}>← Back</Text>
+                <Text style={globalStyles.linkText}>← Back</Text>
             </TouchableOpacity>
-            <Text style={s.heading}>New Task</Text>
+            <Text style={globalStyles.heading}>New Task</Text>
             </View>
 
             {/* Title */}
-            <View style={s.field}>
-            <Text style={s.label}>Title *</Text>
+            <View style={globalStyles.field}>
+            <Text style={globalStyles.label}>Title *</Text>
             <TextInput
-                style={[s.input, errors.title && s.inputError]}
+                style={[globalStyles.input, errors.title && globalStyles.inputError]}
                 placeholder="e.g. Submit project report..."
-                placeholderTextColor="#aaa"
+                placeholderTextColor={Palette.textMuted}
                 value={title}
                 onChangeText={(v) => { setTitle(v); clearError("title"); }}
             />
-            {errors.title && <Text style={s.error}>{errors.title}</Text>}
+            {errors.title && <Text style={globalStyles.errorText}>{errors.title}</Text>}
             </View>
 
             {/* Description */}
-            <View style={s.field}>
-            <Text style={s.label}>Description</Text>
+            <View style={globalStyles.field}>
+            <Text style={globalStyles.label}>Description</Text>
             <TextInput
-                style={[s.input, s.textarea, errors.description && s.inputError]}
+                style={[globalStyles.input, globalStyles.textarea, errors.description && globalStyles.inputError]}
                 placeholder="Make an appointment with the client..."
-                placeholderTextColor="#aaa"
+                placeholderTextColor={Palette.textMuted}
                 value={description}
                 onChangeText={(v) => { setDescription(v); clearError("description"); }}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
             />
-            {errors.description && <Text style={s.error}>{errors.description}</Text>}
+            {errors.description && <Text style={globalStyles.errorText}>{errors.description}</Text>}
             </View>
 
             {/* Category */}
-            <View style={s.field}>
-            <Text style={s.label}>Category</Text>
-            <View style={s.chipRow}>
+            <View style={globalStyles.field}>
+            <Text style={globalStyles.label}>Category</Text>
+            <View style={globalStyles.chipRow}>
                 {CATEGORIES.map((cat) => (
                 <TouchableOpacity
                     key={cat}
-                    style={[s.chip, category === cat && s.chipActive]}
+                    style={[globalStyles.chip, category === cat && globalStyles.chipActive]}
                     onPress={() => setCategory(cat)}
                 >
-                    <Text style={[s.chipText, category === cat && s.chipTextActive]}>
+                    <Text style={[globalStyles.chipText, category === cat && globalStyles.chipTextActive]}>
                     {cat.charAt(0) + cat.slice(1).toLowerCase()}
                     </Text>
                 </TouchableOpacity>
@@ -162,16 +159,16 @@ export default function CreateScreen() {
             </View>
 
             {/* Priority */}
-            <View style={s.field}>
-            <Text style={s.label}>Priority</Text>
-            <View style={s.chipRow}>
+            <View style={globalStyles.field}>
+            <Text style={globalStyles.label}>Priority</Text>
+            <View style={globalStyles.chipRow}>
                 {PRIORITIES.map((p) => (
                 <TouchableOpacity
                     key={p}
-                    style={[s.chip, priority === p && s.chipActive]}
+                    style={[globalStyles.chip, priority === p && globalStyles.chipActive]}
                     onPress={() => setPriority(p)}
                 >
-                    <Text style={[s.chipText, priority === p && s.chipTextActive]}>
+                    <Text style={[globalStyles.chipText, priority === p && globalStyles.chipTextActive]}>
                     {p.charAt(0) + p.slice(1).toLowerCase()}
                     </Text>
                 </TouchableOpacity>
@@ -180,37 +177,37 @@ export default function CreateScreen() {
             </View>
 
             {/* Due Date & Time */}
-            <View style={s.field}>
-            <Text style={s.label}>Due Date & Time</Text>
-            <View style={s.row}>
-                <TouchableOpacity style={[s.input, s.dateBtn]} onPress={() => setShowDatePicker(true)}>
-                <Text style={s.dateText}>📅  {dueDate}</Text>
+            <View style={globalStyles.field}>
+            <Text style={globalStyles.label}>Due Date & Time</Text>
+            <View style={globalStyles.dateRow}>
+                <TouchableOpacity style={[globalStyles.input, globalStyles.dateBtn]} onPress={() => setShowDatePicker(true)}>
+                <Text style={globalStyles.dateText}>📅  {dueDate}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[s.input, s.dateBtn]} onPress={() => setShowTimePicker(true)}>
-                <Text style={s.dateText}>⏰  {formatTime(dueTime)}</Text>
+                <TouchableOpacity style={[globalStyles.input, globalStyles.dateBtn]} onPress={() => setShowTimePicker(true)}>
+                <Text style={globalStyles.dateText}>⏰  {formatTime(dueTime)}</Text>
                 </TouchableOpacity>
             </View>
             </View>
 
             {/* Remind When */}
-            <View style={s.field}>
-            <Text style={s.label}>Remind Me Before</Text>
-            <View style={s.chipRow}>
+            <View style={globalStyles.field}>
+            <Text style={globalStyles.label}>Remind Me Before</Text>
+            <View style={globalStyles.chipRow}>
                 {REMIND_OPTIONS.map((r) => (
                 <TouchableOpacity
                     key={r}
-                    style={[s.chip, remindWhen === r && s.chipActive]}
+                    style={[globalStyles.chip, remindWhen === r && globalStyles.chipActive]}
                     onPress={() => setRemindWhen(r)}
                 >
-                    <Text style={[s.chipText, remindWhen === r && s.chipTextActive]}>{r}</Text>
+                    <Text style={[globalStyles.chipText, remindWhen === r && globalStyles.chipTextActive]}>{r}</Text>
                 </TouchableOpacity>
                 ))}
             </View>
             </View>
 
             {/* Submit */}
-            <TouchableOpacity style={s.btn} onPress={handleSubmit}>
-            <Text style={s.btnText}>Create Task</Text>
+            <TouchableOpacity style={globalStyles.btn} onPress={handleSubmit}>
+            <Text style={globalStyles.btnText}>Create Task</Text>
             </TouchableOpacity>
 
         </ScrollView>
@@ -221,7 +218,7 @@ export default function CreateScreen() {
             value={now}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(event, selected) => {
+            onChange={(_event, selected) => {
                 setShowDatePicker(Platform.OS === "ios");
                 if (selected) {
                     const y = selected.getFullYear();
@@ -240,7 +237,7 @@ export default function CreateScreen() {
             value={dueTime}
             mode="time"
             display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(event, selected) => {
+            onChange={(_event, selected) => {
                 setShowTimePicker(Platform.OS === "ios");
                 if (selected) setDueTime(selected);
                 if (Platform.OS === "android") setShowTimePicker(false);
@@ -250,28 +247,3 @@ export default function CreateScreen() {
         </SafeAreaView>
     );
 }
-
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#fff" },
-  scrollView: { flex: 1 },
-  scroll: { padding: 24, paddingBottom: 48 },
-  header: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 32 },
-  back: { fontSize: 15, color: "#3b82f6" },
-  heading: { fontSize: 22, fontWeight: "700", color: "#111" },
-  field: { marginBottom: 24 },
-  label: { fontSize: 12, fontWeight: "700", color: "#888", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.8 },
-  input: { borderWidth: 1, borderColor: "#e5e5e5", borderRadius: 10, padding: 14, fontSize: 15, color: "#111" },
-  textarea: { height: 90, textAlignVertical: "top" },
-  inputError: { borderColor: "#f87171" },
-  error: { fontSize: 12, color: "#f87171", marginTop: 4 },
-  row: { flexDirection: "row", gap: 10 },
-  dateBtn: { flex: 1, justifyContent: "center" },
-  dateText: { fontSize: 14, color: "#333" },
-  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip: { borderWidth: 1, borderColor: "#e5e5e5", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 9 },
-  chipActive: { borderColor: "#3b82f6", backgroundColor: "#eff6ff" },
-  chipText: { fontSize: 14, color: "#777" },
-  chipTextActive: { color: "#3b82f6", fontWeight: "600" },
-  btn: { backgroundColor: "#3b82f6", borderRadius: 12, padding: 18, alignItems: "center", marginTop: 8 },
-  btnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-});

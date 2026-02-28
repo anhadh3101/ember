@@ -5,11 +5,11 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
     ActivityIndicator,
     Alert,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { globalStyles, Palette } from "@/constants/styles";
 
 interface FormValues {
     email: string;
@@ -55,11 +55,11 @@ export default function SignInScreen() {
         setLoading(true)
         try {
             // TODO: Request the backend to check credentials
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data: _data, error } = await supabase.auth.signInWithPassword({
                 email: values.email,
                 password: values.password
             })
-            
+
             if (error) {
                 throw error;
             }
@@ -72,54 +72,42 @@ export default function SignInScreen() {
     }
 
     return (
-        <View style={styles.container}>
-        <Text style={styles.title}>Sign In</Text>
+        <View style={globalStyles.screenCenter}>
+        <Text style={globalStyles.pageTitle}>Sign In</Text>
 
         {/* Email */}
-        <Text style={styles.label}>Email</Text>
+        <Text style={globalStyles.formLabel}>Email</Text>
         <TextInput
-            style={[styles.input, errors?.email ? styles.inputError : null]}
+            style={[globalStyles.input, errors?.email ? globalStyles.inputError : null]}
             placeholder="Enter your email"
             autoCapitalize="none"
             autoCorrect={false}
             value={values.email}
             onChangeText={(text) => handleChange("email", text)}
         />
-        {errors?.email && <Text style={styles.errorText}>{errors.email}</Text>}
+        {errors?.email && <Text style={globalStyles.errorText}>{errors.email}</Text>}
 
         {/* Password */}
-        <Text style={styles.label}>Password</Text>
+        <Text style={globalStyles.formLabel}>Password</Text>
         <TextInput
-            style={[styles.input, errors?.password ? styles.inputError : null]}
+            style={[globalStyles.input, errors?.password ? globalStyles.inputError : null]}
             placeholder="Enter your password"
             secureTextEntry
             value={values.password}
             onChangeText={(text) => handleChange("password", text)}
             onSubmitEditing={handleSignIn}
         />
-        {errors?.password && <Text style={styles.errorText}>{errors.password}</Text>}
+        {errors?.password && <Text style={globalStyles.errorText}>{errors.password}</Text>}
 
         {/* Sign In Button */}
-        <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign In</Text>}
+        <TouchableOpacity style={globalStyles.btn} onPress={handleSignIn} disabled={loading}>
+            {loading ? <ActivityIndicator color={Palette.white} /> : <Text style={globalStyles.btnText}>Sign In</Text>}
         </TouchableOpacity>
 
         {/* Navigate to Sign Up */}
         <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
-            <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
+            <Text style={globalStyles.centeredLink}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
         </View>
     );
-    }
-
-    const styles = StyleSheet.create({
-    container: { flex: 1, justifyContent: "center", padding: 24 },
-    title: { fontSize: 28, fontWeight: "bold", marginBottom: 24 },
-    label: { fontSize: 14, marginBottom: 4 },
-    input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 15 },
-    inputError: { borderColor: "red" },
-    errorText: { color: "red", fontSize: 12, marginBottom: 8 },
-    button: { backgroundColor: "#4A90E2", padding: 14, borderRadius: 8, alignItems: "center", marginTop: 8 },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-    linkText: { textAlign: "center", color: "#4A90E2", marginTop: 16 },
-});
+}

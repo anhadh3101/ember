@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import {
-    View,
     Text,
     TextInput,
     TouchableOpacity,
-    StyleSheet,
     ActivityIndicator,
     Alert,
     ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
+import { globalStyles, Palette } from "@/constants/styles";
 
 interface FormValues {
     fullName: string;
@@ -94,7 +93,7 @@ export default function SignUpScreen() {
 
         try {
             // TODO: Call the backend to register a user
-            const { data, error } = await supabase.auth.signUp({
+            await supabase.auth.signUp({
                 email: values.email,
                 password: values.password,
                 options: {
@@ -114,37 +113,37 @@ export default function SignUpScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Set up your Task Manager account</Text>
+        <ScrollView contentContainerStyle={globalStyles.screenCenter} keyboardShouldPersistTaps="handled">
+        <Text style={globalStyles.pageTitle}>Create Account</Text>
+        <Text style={globalStyles.subtitle}>Set up your Task Manager account</Text>
 
         {/* Full Name */}
-        <Text style={styles.label}>Full Name</Text>
+        <Text style={globalStyles.formLabel}>Full Name</Text>
         <TextInput
-            style={[styles.input, errors.fullName ? styles.inputError : null]}
+            style={[globalStyles.input, errors.fullName ? globalStyles.inputError : null]}
             placeholder="Enter your full name"
             autoCorrect={false}
             value={values.fullName}
             onChangeText={(text) => handleChange("fullName", text)}
         />
-        {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
+        {errors.fullName && <Text style={globalStyles.errorText}>{errors.fullName}</Text>}
 
         {/* Username */}
-        <Text style={styles.label}>Username</Text>
+        <Text style={globalStyles.formLabel}>Username</Text>
         <TextInput
-            style={[styles.input, errors.username ? styles.inputError : null]}
+            style={[globalStyles.input, errors.username ? globalStyles.inputError : null]}
             placeholder="Choose a username"
             autoCapitalize="none"
             autoCorrect={false}
             value={values.username}
             onChangeText={(text) => handleChange("username", text)}
         />
-        {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
+        {errors.username && <Text style={globalStyles.errorText}>{errors.username}</Text>}
 
         {/* Email */}
-        <Text style={styles.label}>Email</Text>
+        <Text style={globalStyles.formLabel}>Email</Text>
         <TextInput
-            style={[styles.input, errors.email ? styles.inputError : null]}
+            style={[globalStyles.input, errors.email ? globalStyles.inputError : null]}
             placeholder="Enter your email"
             autoCapitalize="none"
             autoCorrect={false}
@@ -152,55 +151,42 @@ export default function SignUpScreen() {
             value={values.email}
             onChangeText={(text) => handleChange("email", text)}
         />
-        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+        {errors.email && <Text style={globalStyles.errorText}>{errors.email}</Text>}
 
         {/* Password */}
-        <Text style={styles.label}>Password</Text>
+        <Text style={globalStyles.formLabel}>Password</Text>
         <TextInput
-            style={[styles.input, errors.password ? styles.inputError : null]}
+            style={[globalStyles.input, errors.password ? globalStyles.inputError : null]}
             placeholder="Create a password"
             secureTextEntry
             value={values.password}
             onChangeText={(text) => handleChange("password", text)}
         />
-        {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+        {errors.password && <Text style={globalStyles.errorText}>{errors.password}</Text>}
 
         {/* Confirm Password */}
-        <Text style={styles.label}>Re-enter Password</Text>
+        <Text style={globalStyles.formLabel}>Re-enter Password</Text>
         <TextInput
-            style={[styles.input, errors.confirmPassword ? styles.inputError : null]}
+            style={[globalStyles.input, errors.confirmPassword ? globalStyles.inputError : null]}
             placeholder="Confirm your password"
             secureTextEntry
             value={values.confirmPassword}
             onChangeText={(text) => handleChange("confirmPassword", text)}
             onSubmitEditing={handleSignUp}
         />
-        {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+        {errors.confirmPassword && <Text style={globalStyles.errorText}>{errors.confirmPassword}</Text>}
 
         {/* Sign Up Button */}
-        <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+        <TouchableOpacity style={globalStyles.btn} onPress={handleSignUp} disabled={loading}>
             {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Create Account</Text>}
+            ? <ActivityIndicator color={Palette.white} />
+            : <Text style={globalStyles.btnText}>Create Account</Text>}
         </TouchableOpacity>
 
         {/* Navigate back to Sign In */}
         <TouchableOpacity onPress={() => router.back()}>
-            <Text style={styles.linkText}>Already have an account? Sign In</Text>
+            <Text style={globalStyles.centeredLink}>Already have an account? Sign In</Text>
         </TouchableOpacity>
         </ScrollView>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flexGrow: 1, justifyContent: "center", padding: 24 },
-    title: { fontSize: 28, fontWeight: "bold", marginBottom: 4 },
-    subtitle: { fontSize: 14, color: "#666", marginBottom: 24 },
-    label: { fontSize: 14, marginBottom: 4 },
-    input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10, marginBottom: 12, fontSize: 15 },
-    inputError: { borderColor: "red" },
-    errorText: { color: "red", fontSize: 12, marginBottom: 8 },
-    button: { backgroundColor: "#4A90E2", padding: 14, borderRadius: 8, alignItems: "center", marginTop: 8, marginBottom: 16 },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-    linkText: { textAlign: "center", color: "#4A90E2" },
-});

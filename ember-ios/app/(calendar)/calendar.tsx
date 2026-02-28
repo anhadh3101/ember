@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { globalStyles, Palette } from '@/constants/styles';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = [
@@ -39,49 +40,49 @@ export default function CalendarScreen() {
     const weeks = Array.from({ length: cells.length / 7 }, (_, i) => cells.slice(i * 7, i * 7 + 7));
 
     return (
-        <SafeAreaView style={s.safe}>
-            <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={globalStyles.safe}>
+            <ScrollView contentContainerStyle={globalStyles.formScroll} showsVerticalScrollIndicator={false}>
 
                 {/* Header */}
-                <View style={s.header}>
-                    <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={s.backBtn}>
-                        <Ionicons name="arrow-back" size={22} color="#3b82f6" />
+                <View style={globalStyles.calendarHeader}>
+                    <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={globalStyles.calendarBackBtn}>
+                        <Ionicons name="arrow-back" size={22} color={Palette.primary} />
                     </TouchableOpacity>
-                    <Text style={s.headerTitle}>Calendar</Text>
+                    <Text style={globalStyles.calendarHeaderTitle}>Calendar</Text>
                     <View style={{ width: 34 }} />
                 </View>
 
                 {/* Month navigation */}
-                <View style={s.monthNav}>
-                    <TouchableOpacity onPress={prevMonth} style={s.navBtn}>
-                        <Ionicons name="chevron-back" size={22} color="#111" />
+                <View style={globalStyles.monthNav}>
+                    <TouchableOpacity onPress={prevMonth} style={globalStyles.navBtn}>
+                        <Ionicons name="chevron-back" size={22} color={Palette.text} />
                     </TouchableOpacity>
-                    <Text style={s.monthTitle}>{MONTH_NAMES[viewMonth]} {viewYear}</Text>
-                    <TouchableOpacity onPress={nextMonth} style={s.navBtn}>
-                        <Ionicons name="chevron-forward" size={22} color="#111" />
+                    <Text style={globalStyles.monthTitle}>{MONTH_NAMES[viewMonth]} {viewYear}</Text>
+                    <TouchableOpacity onPress={nextMonth} style={globalStyles.navBtn}>
+                        <Ionicons name="chevron-forward" size={22} color={Palette.text} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Day-of-week labels */}
-                <View style={s.dayLabelsRow}>
+                <View style={globalStyles.dayLabelsRow}>
                     {DAY_LABELS.map(d => (
-                        <Text key={d} style={s.dayLabel}>{d}</Text>
+                        <Text key={d} style={globalStyles.dayLabel}>{d}</Text>
                     ))}
                 </View>
 
                 {/* Calendar grid */}
-                <View style={s.grid}>
+                <View>
                     {weeks.map((week, wi) => (
-                        <View key={wi} style={s.week}>
+                        <View key={wi} style={globalStyles.calendarWeek}>
                             {week.map((day, di) => {
-                                if (day === null) return <View key={`e-${wi}-${di}`} style={s.cell} />;
+                                if (day === null) return <View key={`e-${wi}-${di}`} style={globalStyles.calendarCell} />;
 
                                 const dateStr = `${viewYear}-${viewMonth}-${day}`;
                                 const isToday = dateStr === todayStr;
 
                                 return (
-                                    <View key={dateStr} style={[s.cell, isToday && s.cellToday]}>
-                                        <Text style={[s.cellText, isToday && s.cellTextToday]}>{day}</Text>
+                                    <View key={dateStr} style={[globalStyles.calendarCell, isToday && globalStyles.calendarCellToday]}>
+                                        <Text style={[globalStyles.calendarCellText, isToday && globalStyles.calendarCellTextToday]}>{day}</Text>
                                     </View>
                                 );
                             })}
@@ -93,51 +94,3 @@ export default function CalendarScreen() {
         </SafeAreaView>
     );
 }
-
-const s = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: '#fff' },
-    scroll: { padding: 20, paddingBottom: 48 },
-
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 24,
-    },
-    backBtn: { padding: 6 },
-    headerTitle: { fontSize: 20, fontWeight: '700', color: '#111' },
-
-    monthNav: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    navBtn: { padding: 6 },
-    monthTitle: { fontSize: 17, fontWeight: '700', color: '#111' },
-
-    dayLabelsRow: { flexDirection: 'row', marginBottom: 4 },
-    dayLabel: {
-        flex: 1,
-        textAlign: 'center',
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#aaa',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-
-    grid: {},
-    week: { flexDirection: 'row' },
-    cell: {
-        flex: 1,
-        aspectRatio: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 10,
-        margin: 2,
-    },
-    cellToday: { backgroundColor: '#3b82f6' },
-    cellText: { fontSize: 14, color: '#111', fontWeight: '500' },
-    cellTextToday: { color: '#fff', fontWeight: '700' },
-});

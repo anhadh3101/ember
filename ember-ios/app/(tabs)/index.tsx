@@ -1,5 +1,5 @@
-import { Ionicons } from '@expo/vector-icons'
-import { StyleSheet, Alert, View, Text, TouchableOpacity } from 'react-native'
+import { Image } from "react-native";
+import { Alert, View, Text, TouchableOpacity } from 'react-native'
 import { useCallback, useRef, useState } from 'react'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -11,11 +11,12 @@ import { supabase } from '@/lib/supabase'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
 import { reload } from 'expo-router/build/global-state/routing'
+import { globalStyles, Palette } from '@/constants/styles'
 
 const PRIORITY_COLORS: Record<string, string> = {
-    LOW: '#22c55e',
-    MEDIUM: '#f59e0b',
-    HIGH: '#ef4444',
+    LOW: Palette.success,
+    MEDIUM: Palette.warning,
+    HIGH: Palette.danger,
 }
 
 type Task = {
@@ -52,31 +53,31 @@ function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
     return (
         <ReanimatedSwipeable
             renderRightActions={() => (
-                <View style={styles.swipeActions}>
-                    <TouchableOpacity style={styles.editButton} onPress={() => onEdit(task)}>
-                        <Text style={styles.editText}>Edit</Text>
+                <View style={globalStyles.swipeActions}>
+                    <TouchableOpacity style={[globalStyles.swipeActionBtn, globalStyles.swipeEdit]} onPress={() => onEdit(task)}>
+                        <Text style={globalStyles.actionText}>Edit</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteButton} onPress={() => onDelete(task.task_id)}>
-                        <Text style={styles.deleteText}>Delete</Text>
+                    <TouchableOpacity style={[globalStyles.swipeActionBtn, globalStyles.swipeDelete]} onPress={() => onDelete(task.task_id)}>
+                        <Text style={globalStyles.actionText}>Delete</Text>
                     </TouchableOpacity>
                 </View>
             )}
         >
-            <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={styles.card}>
-                <View style={styles.cardHeader}>
-                    <Text style={[styles.taskTitle, task.status === 'COMPLETED' && styles.strikethrough]}>
+            <TouchableOpacity onPress={handlePress} activeOpacity={0.85} style={globalStyles.card}>
+                <View style={globalStyles.cardHeader}>
+                    <Text style={[globalStyles.taskTitle, task.status === 'COMPLETED' && globalStyles.strikethrough]}>
                         {task.title}
                     </Text>
-                    <View style={[styles.priorityBadge, { backgroundColor: PRIORITY_COLORS[task.priority] ?? '#aaa' }]}>
-                        <Text style={styles.priorityText}>{task.priority}</Text>
+                    <View style={[globalStyles.priorityBadge, { backgroundColor: PRIORITY_COLORS[task.priority] ?? Palette.textMuted }]}>
+                        <Text style={globalStyles.priorityText}>{task.priority}</Text>
                     </View>
                 </View>
                 {task.description ? (
-                    <Text style={styles.description}>{task.description}</Text>
+                    <Text style={globalStyles.cardDescription}>{task.description}</Text>
                 ) : null}
-                <View style={styles.cardFooter}>
-                    <Text style={styles.meta}>{task.category}</Text>
-                    <Text style={styles.meta}>{task.due_time?.slice(0, 5)}</Text>
+                <View style={globalStyles.cardFooter}>
+                    <Text style={globalStyles.cardMeta}>{task.category}</Text>
+                    <Text style={globalStyles.cardMeta}>{task.due_time?.slice(0, 5)}</Text>
                 </View>
             </TouchableOpacity>
         </ReanimatedSwipeable>
@@ -225,23 +226,23 @@ export default function HomeScreen() {
     );
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureHandlerRootView style={globalStyles.flex1}>
             <ParallaxScrollView
                 headerBackgroundColor={{ light: '#f3f4f6', dark: '#1f2937' }}
                 headerImage={
-                    <View style={[styles.headerContent, { paddingTop: top }]}>
-                        <TouchableOpacity style={styles.calendarButton} onPress={() => router.replace('/(calendar)/calendar')}>
-                            <Ionicons name="calendar-outline" size={26} color="#111" />
+                    <View style={[globalStyles.headerContent, { paddingTop: top }]}>
+                        <TouchableOpacity style={globalStyles.calendarButton} onPress={() => router.replace('/(calendar)/calendar')}>
+                            <Image source={require('@/assets/images/icons8-calendar-64.png')} style={{ width: 26, height: 26 }} />
                         </TouchableOpacity>
-                        <Text style={styles.headerDate}>
+                        <Text style={globalStyles.headerDate}>
                             {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                         </Text>
                     </View>
                 }
             >
                 {todoTasks.length === 0 ? (
-                    <ThemedView style={styles.empty}>
-                        <ThemedText style={styles.emptyText}>No tasks due today.</ThemedText>
+                    <ThemedView style={globalStyles.emptyState}>
+                        <ThemedText style={globalStyles.emptyText}>No tasks due today.</ThemedText>
                     </ThemedView>
                 ) : (
                     todoTasks.map((task, index) => (
@@ -256,8 +257,8 @@ export default function HomeScreen() {
                 )}
 
                 {completedTasks.length === 0 ? (
-                    <ThemedView style={styles.empty}>
-                        <ThemedText style={styles.emptyText}>No completed tasks today.</ThemedText>
+                    <ThemedView style={globalStyles.emptyState}>
+                        <ThemedText style={globalStyles.emptyText}>No completed tasks today.</ThemedText>
                     </ThemedView>
                 ) : (
                     completedTasks.map((task, index) => (
@@ -274,112 +275,3 @@ export default function HomeScreen() {
         </GestureHandlerRootView>
     )
 }
-
-const styles = StyleSheet.create({
-    headerContent: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-    },
-    calendarButton: {
-        padding: 4,
-    },
-    headerDate: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: '#111',
-    },
-    empty: {
-        alignItems: 'center',
-        paddingVertical: 32,
-    },
-    emptyText: {
-        color: '#aaa',
-        fontSize: 15,
-    },
-    card: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#e5e5e5',
-        shadowColor: '#000',
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-        shadowOffset: { width: 0, height: 2 },
-    },
-    cardHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 6,
-    },
-    taskTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#111',
-        flex: 1,
-        marginRight: 8,
-    },
-    priorityBadge: {
-        borderRadius: 6,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-    },
-    priorityText: {
-        fontSize: 11,
-        fontWeight: '700',
-        color: '#fff',
-    },
-    description: {
-        fontSize: 13,
-        color: '#666',
-        marginBottom: 10,
-    },
-    cardFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    meta: {
-        fontSize: 12,
-        color: '#999',
-    },
-    strikethrough: {
-        textDecorationLine: 'line-through',
-        color: '#aaa',
-    },
-    swipeActions: {
-        flexDirection: 'row',
-        alignItems: 'stretch',
-        marginBottom: 12,
-        marginLeft: 8,
-        gap: 8,
-    },
-    editButton: {
-        backgroundColor: '#3b82f6',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 80,
-        borderRadius: 12,
-    },
-    editText: {
-        color: '#fff',
-        fontWeight: '700',
-        fontSize: 13,
-    },
-    deleteButton: {
-        backgroundColor: '#ef4444',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 80,
-        borderRadius: 12,
-    },
-    deleteText: {
-        color: '#fff',
-        fontWeight: '700',
-        fontSize: 13,
-    },
-})
