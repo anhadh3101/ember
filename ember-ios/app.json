@@ -29,6 +29,14 @@
     },
     "plugins": [
       [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#f97316",
+          "iosDisplayInForeground": true
+        }
+      ],
+      [
         "expo-calendar",
         {
           "calendarPermission": "The app needs to access your calendar."

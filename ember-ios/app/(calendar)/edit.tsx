@@ -8,14 +8,17 @@ import {
     TouchableOpacity,
     ScrollView,
     Platform,
+    Modal,
+    StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { globalStyles, Palette } from "@/constants/styles";
+import { scheduleTaskNotification } from "@/lib/notifications";
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
 const CATEGORIES = ["PERSONAL", "WORK", "FITNESS"];
-const REMIND_OPTIONS = ["10m", "15m", "30m", "45m", "1h"];
+const REMIND_OPTIONS = ["1m", "5m", "10m", "15m", "30m", "45m", "1h"];
 
 function parseTimeString(timeStr: string): Date {
     const [hours, minutes] = timeStr.split(":").map(Number);
@@ -35,6 +38,7 @@ export default function EditScreen() {
         due_date: string;
         due_time: string;
         status: string;
+        remind_when: string;
     }>();
 
     const [title, setTitle] = useState(params.title ?? "");
@@ -45,7 +49,7 @@ export default function EditScreen() {
     const [dueTime, setDueTime] = useState<Date>(
         params.due_time ? parseTimeString(params.due_time) : new Date()
     );
-    const [remindWhen, setRemindWhen] = useState("15m");
+    const [remindWhen, setRemindWhen] = useState(params.remind_when ?? "15m");
 
     const [errors, setErrors] = useState<Record<string, string | null>>({});
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -65,20 +69,31 @@ export default function EditScreen() {
         if (!validate()) return;
 
         try {
+            const due_time = `${String(dueTime.getHours()).padStart(2, "0")}:${String(dueTime.getMinutes()).padStart(2, "0")}:00`;
+
             const { error } = await supabase
                 .from("tasks")
                 .update({
                     title,
                     description,
                     due_date: dueDate,
-                    due_time: `${String(dueTime.getHours()).padStart(2, "0")}:${String(dueTime.getMinutes()).padStart(2, "0")}:00`,
+                    due_time,
                     priority,
                     category,
                     updated_at: new Date().toISOString(),
+                    remind_when: remindWhen,
                 })
                 .eq("task_id", params.task_id);
 
             if (error) throw error;
+
+            await scheduleTaskNotification({
+                task_id: params.task_id,
+                title,
+                due_date: dueDate,
+                due_time,
+                remind_when: remindWhen,
+            });
 
             router.back();
         } catch (error) {
@@ -207,36 +222,88 @@ export default function EditScreen() {
 
         {/* Date Picker */}
         {showDatePicker && (
-            <DateTimePicker
-            value={new Date(dueDate)}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(_event, selected) => {
-                setShowDatePicker(Platform.OS === "ios");
-                if (selected) {
-                    const y = selected.getFullYear();
-                    const m = String(selected.getMonth() + 1).padStart(2, "0");
-                    const d = String(selected.getDate()).padStart(2, "0");
-                    setDueDate(`${y}-${m}-${d}`);
-                }
-                if (Platform.OS === "android") setShowDatePicker(false);
-            }}
-            />
+            Platform.OS === "ios" ? (
+                <Modal transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+                    <TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
+                    <View style={pickerStyles.sheet}>
+                        <View style={pickerStyles.sheetHeader}>
+                            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                <Text style={pickerStyles.doneBtn}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                            value={new Date(dueDate)}
+                            mode="date"
+                            display="spinner"
+                            onChange={(_event, selected) => {
+                                if (selected) {
+                                    const y = selected.getFullYear();
+                                    const m = String(selected.getMonth() + 1).padStart(2, "0");
+                                    const d = String(selected.getDate()).padStart(2, "0");
+                                    setDueDate(`${y}-${m}-${d}`);
+                                }
+                            }}
+                        />
+                    </View>
+                </Modal>
+            ) : (
+                <DateTimePicker
+                    value={new Date(dueDate)}
+                    mode="date"
+                    display="default"
+                    onChange={(_event, selected) => {
+                        if (selected) {
+                            const y = selected.getFullYear();
+                            const m = String(selected.getMonth() + 1).padStart(2, "0");
+                            const d = String(selected.getDate()).padStart(2, "0");
+                            setDueDate(`${y}-${m}-${d}`);
+                        }
+                        setShowDatePicker(false);
+                    }}
+                />
+            )
         )}
 
         {/* Time Picker */}
         {showTimePicker && (
-            <DateTimePicker
-            value={dueTime}
-            mode="time"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(_event, selected) => {
-                setShowTimePicker(Platform.OS === "ios");
-                if (selected) setDueTime(selected);
-                if (Platform.OS === "android") setShowTimePicker(false);
-            }}
-            />
+            Platform.OS === "ios" ? (
+                <Modal transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
+                    <TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={() => setShowTimePicker(false)} />
+                    <View style={pickerStyles.sheet}>
+                        <View style={pickerStyles.sheetHeader}>
+                            <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                                <Text style={pickerStyles.doneBtn}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                            value={dueTime}
+                            mode="time"
+                            display="spinner"
+                            onChange={(_event, selected) => {
+                                if (selected) setDueTime(selected);
+                            }}
+                        />
+                    </View>
+                </Modal>
+            ) : (
+                <DateTimePicker
+                    value={dueTime}
+                    mode="time"
+                    display="default"
+                    onChange={(_event, selected) => {
+                        if (selected) setDueTime(selected);
+                        setShowTimePicker(false);
+                    }}
+                />
+            )
         )}
         </SafeAreaView>
     );
 }
+
+const pickerStyles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+    sheet: { backgroundColor: "#1c1c1e", borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 24 },
+    sheetHeader: { flexDirection: "row", justifyContent: "flex-end", padding: 12 },
+    doneBtn: { color: "#f97316", fontSize: 16, fontWeight: "600" },
+});

@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
 import { reload } from 'expo-router/build/global-state/routing'
 import { globalStyles, Palette } from '@/constants/styles'
+import { cancelTaskNotification, scheduleTaskNotification } from '@/lib/notifications'
 
 const PRIORITY_COLORS: Record<string, string> = {
     LOW: Palette.success,
@@ -28,6 +29,7 @@ type Task = {
     due_date: string
     due_time: string
     status: string
+    remind_when: string | null
 }
 
 type TaskCardProps = {
@@ -108,6 +110,7 @@ export default function HomeScreen() {
         const byTimeLocal = (a: Task, b: Task) => a.due_time.localeCompare(b.due_time);
 
         if (task.status === 'TODO') {
+            // If we need to change the status to 'COMPLETED', then delete from todo list and add to completed list.
             setTodoTasks(prev => prev.filter(t => t.task_id !== task.task_id));
             setCompletedTasks(prev => {
                 const insertIdx = prev.findIndex(t => byTimeLocal(t, task) > 0);
@@ -116,7 +119,15 @@ export default function HomeScreen() {
                 next.splice(insertIdx, 0, updatedTask);
                 return next;
             });
+            console.log("[index.tsx (changeTaskStatus)] Completed task: ", updatedTask.task_id);
+
+            // Cancel the notification for this task since it is completed.
+            cancelTaskNotification(task.task_id)
+            .then(() => {
+                console.log("[index.tsx (changeTaskStatus)] Notification cancelled!");
+            })
         } else {
+            // Do the same if the task needs to be changed back to 'TODO'.
             setCompletedTasks(prev => prev.filter(t => t.task_id !== task.task_id));
             setTodoTasks(prev => {
                 const insertIdx = prev.findIndex(t => byTimeLocal(t, task) > 0);
@@ -125,15 +136,25 @@ export default function HomeScreen() {
                 next.splice(insertIdx, 0, updatedTask);
                 return next;
             });
+            console.log("[index.tsx (changeTaskStatus)] Uncompleted task: ", updatedTask.task_id);
+
+            scheduleTaskNotification(updatedTask)
+            .then(() => {
+                console.log("[index.tsx (changeTaskStatus)] Notification scheduled!");
+            })
         }
 
+        // Add to the update batch if the tasks is not present otherwise remove it from the batch.
         if (updateBatch.current.has(task.task_id)) {
+            // Removing from the batch means the task's status is revereted back to its original value.
             updateBatch.current.delete(task.task_id);
         } else {
+            // Appending to the batch means the task's status is changed once.
             updateBatch.current.set(task.task_id, newStatus);
         }
     }, []);
 
+    // Handles the editing of a task, by redirecting to the edit screen.
     const handleEdit = useCallback((task: Task) => {
         router.push({
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -147,11 +168,12 @@ export default function HomeScreen() {
                 due_date: task.due_date,
                 due_time: task.due_time,
                 status: task.status,
+                remind_when: task.remind_when ?? "15m",
             },
         });
     }, [router]);
 
-    // Stable callback — same pattern.
+    // Adds the task to the delete batch and removes it from the todo and completed tasks on delete button press.
     const addToDeleteBatch = useCallback((task_id: string) => {
         setTodoTasks(prev => prev.filter(t => t.task_id !== task_id));
         setCompletedTasks(prev => prev.filter(t => t.task_id !== task_id));
@@ -163,53 +185,80 @@ export default function HomeScreen() {
 
     async function pushUpdatesBatch() {
         try {
+            // Push the updates in a list that will be used to make bulk request to the database.
+            let updateRecords: { task_id: string; status: string; updated_at: string }[]= [];
             for (const [task_id, newStatus] of updateBatch.current) {
-                const { error } = await supabase
-                    .from('tasks')
-                    .update([{ status: newStatus, updated_at: new Date().toISOString() }])
-                    .eq('task_id', task_id);
-                if (error) throw error;
+                updateRecords.push({ task_id, status: newStatus, updated_at: new Date().toISOString() });
             }
-            console.log(`Pushed ${updateBatch.current.size} updates.`);
+
+            // Make the bulk request
+            const { data, error } = await supabase
+                .from('tasks')
+                .upsert(updateRecords)
+                .select()
+
+            // If there are any errors, then handle them.
+            if (error) throw error;
+
+            // Clear the update batch on exit.
+            console.log(`[index.tsx (pushUpdatesBatch)] Upserted ${data.length} tasks in a batch of ${updateRecords.length}.`);
             updateBatch.current.clear();
         } catch (error) {
-            console.log(error);
-            Alert.alert("Error", "Something went wrong. Please try again.");
+            console.error(error);
+            Alert.alert("Error", "Failed to make updates. Please try again.");
         }
     }
 
     async function pushDeletesBatch() {
         try {
+            // Add all the task ids to delete in a list.
+            let deleteRecords: string[] = [];
             for (const task_id of deleteBatch.current.keys()) {
-                const { error } = await supabase
-                    .from('tasks')
-                    .delete()
-                    .eq('task_id', task_id);
-                if (error) throw error;
+                deleteRecords.push(task_id);
             }
-            console.log(`Pushed ${deleteBatch.current.size} deletes.`);
+
+            // Make a bulk delete request to Supabase with task ids.
+            const { data, error } = await supabase
+                .from('tasks')
+                .delete()
+                .in('task_id', deleteRecords)
+                .select();
+
+            // If there are any errors, then handle them.
+            if (error) throw error;
+            console.log(`[index.tsx (pushDeletesBatch)] Deleted ${data.length} tasks in a batch of ${deleteRecords.length}.`);
+
+            // Clear the notifications for deleted tasks and clean the delete batch.
+            for (const task_id of deleteBatch.current.keys()) {
+                await cancelTaskNotification(task_id);
+            }
             deleteBatch.current.clear();
         } catch (error) {
-            console.log(error);
-            Alert.alert("Error", "Something went wrong. Please try again.");
+            console.error(error);
+            Alert.alert("Error", "Failed to delete tasks. Please try again.");
         }
     }
 
     async function fetchTasks() {
         try {
+            // Fetch the tasks from the backend that need to be carried out for that day.
             const { data, error } = await supabase
                 .from('tasks')
                 .select('*')
                 .eq('user_id', session?.user.id)
                 .eq('due_date', dateToday);
+    
             if (error) throw error;
 
+            // Sort the tasks based on time and filtern them.
             const sortedData = (data ?? []).sort(byTime);
             setTodoTasks(sortedData.filter(t => t.status === 'TODO'));
             setCompletedTasks(sortedData.filter(t => t.status === 'COMPLETED'));
+
+            console.log(`[index.tsx (fetchTasks)] Fetched ${sortedData.length} tasks.`);
         } catch (error) {
-            console.log(error);
-            Alert.alert("Error", "Something went wrong. Please try again.");
+            console.error(error);
+            Alert.alert("Error", "Failed fetching tasks. Please try again.");
         }
     }
 
@@ -217,10 +266,16 @@ export default function HomeScreen() {
         useCallback(() => {
             fetchTasks();
             setResetKey(k => k + 1);
+
+            // Push updates and deletes on reload.
+            pushUpdatesBatch();
+            pushDeletesBatch();
+
             return () => {
+                // Push updates and deletes on exit.
                 pushUpdatesBatch();
                 pushDeletesBatch();
-                console.log('Pushing updates and deletes if any.');
+                console.log('[index.tsx] Pushing updates and deletes if any.');
             }
         }, [session])
     );

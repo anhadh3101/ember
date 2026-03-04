@@ -9,22 +9,26 @@ import {
     TouchableOpacity,
     ScrollView,
     Platform,
+    Modal,
+    StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
 import { useFocusEffect } from "expo-router";
 import { globalStyles, Palette } from "@/constants/styles";
+import { scheduleTaskNotification } from "@/lib/notifications";
 
 const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
 const CATEGORIES = ["PERSONAL", "WORK", "FITNESS"];
-const REMIND_OPTIONS = ["10m", "15m", "30m", "45m", "1h"];
+const REMIND_OPTIONS = ["1m", "5m", "10m", "15m", "30m", "45m", "1h"];
 
 export default function CreateScreen() {
-    const now = new Date();
-    const dateToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
     const router = useRouter();
     const { session } = useAuthContext();
+
+    // Format the date to match the user's timezone
+    const now = new Date();
+    const dateToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -46,7 +50,6 @@ export default function CreateScreen() {
     const validate = () => {
         const e: Record<string, string> = {};
         if (!title.trim()) e.title = "Title is required.";
-        if (!description.trim()) e.description = "Description is required.";
 
         setErrors(e);
         return Object.keys(e).length === 0;
@@ -60,18 +63,29 @@ export default function CreateScreen() {
         const task = { title, description, priority, category, dueDate, dueTime, remindWhen };
 
         try {
-            const { error } = await supabase.from("tasks").insert([{
+            const dueTime = `${String(task.dueTime.getHours()).padStart(2, '0')}:${String(task.dueTime.getMinutes()).padStart(2, '0')}:00`;
+
+            const { data: insertedRows, error } = await supabase.from("tasks").insert([{
                 title: task.title,
                 description: task.description,
                 due_date: task.dueDate,
-                due_time: `${String(task.dueTime.getHours()).padStart(2, '0')}:${String(task.dueTime.getMinutes()).padStart(2, '0')}:00`,
+                due_time: dueTime,
                 priority: task.priority,
                 category: task.category,
                 user_id: session?.user.id,
-            }]);
+                remind_when: task.remindWhen,
+            }]).select('task_id');
 
-            if (error) {
-                throw error;
+            if (error) throw error;
+
+            if (insertedRows?.length) {
+                await scheduleTaskNotification({
+                    task_id: insertedRows[0].task_id,
+                    title: task.title,
+                    due_date: task.dueDate,
+                    due_time: dueTime,
+                    remind_when: task.remindWhen,
+                });
             }
 
             router.replace("/(tabs)");
@@ -87,6 +101,7 @@ export default function CreateScreen() {
 
     useFocusEffect(
         useCallback(() => {
+            // Clear the form fields.
             return () => {
                 setTitle('');
                 setDescription('');
@@ -95,6 +110,8 @@ export default function CreateScreen() {
                 setDueDate(dateToday);
                 setDueTime(new Date());
                 setRemindWhen("15m");
+                setShowDatePicker(false);
+                setShowTimePicker(false);
                 console.log('Cleaning Create Tasks Page!');
             }
     }, [session]));
@@ -106,9 +123,9 @@ export default function CreateScreen() {
             {/* Header */}
             <View style={globalStyles.formHeader}>
             <TouchableOpacity onPress={() => router.back()}>
-                <Text style={globalStyles.linkText}>← Back</Text>
+                <Text style={globalStyles.linkText}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={globalStyles.heading}>New Task</Text>
+            <Text style={globalStyles.heading}>What need's reminding?</Text>
             </View>
 
             {/* Title */}
@@ -129,7 +146,7 @@ export default function CreateScreen() {
             <Text style={globalStyles.label}>Description</Text>
             <TextInput
                 style={[globalStyles.input, globalStyles.textarea, errors.description && globalStyles.inputError]}
-                placeholder="Make an appointment with the client..."
+                placeholder="e.g. Make an appointment with clients..."
                 placeholderTextColor={Palette.textMuted}
                 value={description}
                 onChangeText={(v) => { setDescription(v); clearError("description"); }}
@@ -207,43 +224,95 @@ export default function CreateScreen() {
 
             {/* Submit */}
             <TouchableOpacity style={globalStyles.btn} onPress={handleSubmit}>
-            <Text style={globalStyles.btnText}>Create Task</Text>
+            <Text style={globalStyles.btnText}>Let's Go!</Text>
             </TouchableOpacity>
 
         </ScrollView>
 
         {/* Date Picker */}
         {showDatePicker && (
-            <DateTimePicker
-            value={now}
-            mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(_event, selected) => {
-                setShowDatePicker(Platform.OS === "ios");
-                if (selected) {
-                    const y = selected.getFullYear();
-                    const m = String(selected.getMonth() + 1).padStart(2, '0');
-                    const d = String(selected.getDate()).padStart(2, '0');
-                    setDueDate(`${y}-${m}-${d}`);
-                }
-                if (Platform.OS === "android") setShowDatePicker(false);
-            }}
-            />
+            Platform.OS === "ios" ? (
+                <Modal transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
+                    <TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={() => setShowDatePicker(false)} />
+                    <View style={pickerStyles.sheet}>
+                        <View style={pickerStyles.sheetHeader}>
+                            <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                <Text style={pickerStyles.doneBtn}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                            value={new Date(dueDate)}
+                            mode="date"
+                            display="spinner"
+                            onChange={(_event, selected) => {
+                                if (selected) {
+                                    const y = selected.getFullYear();
+                                    const m = String(selected.getMonth() + 1).padStart(2, '0');
+                                    const d = String(selected.getDate()).padStart(2, '0');
+                                    setDueDate(`${y}-${m}-${d}`);
+                                }
+                            }}
+                        />
+                    </View>
+                </Modal>
+            ) : (
+                <DateTimePicker
+                    value={new Date(dueDate)}
+                    mode="date"
+                    display="default"
+                    onChange={(_event, selected) => {
+                        if (selected) {
+                            const y = selected.getFullYear();
+                            const m = String(selected.getMonth() + 1).padStart(2, '0');
+                            const d = String(selected.getDate()).padStart(2, '0');
+                            setDueDate(`${y}-${m}-${d}`);
+                        }
+                        setShowDatePicker(false);
+                    }}
+                />
+            )
         )}
 
         {/* Time Picker */}
         {showTimePicker && (
-            <DateTimePicker
-            value={dueTime}
-            mode="time"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={(_event, selected) => {
-                setShowTimePicker(Platform.OS === "ios");
-                if (selected) setDueTime(selected);
-                if (Platform.OS === "android") setShowTimePicker(false);
-            }}
-            />
+            Platform.OS === "ios" ? (
+                <Modal transparent animationType="slide" onRequestClose={() => setShowTimePicker(false)}>
+                    <TouchableOpacity style={pickerStyles.overlay} activeOpacity={1} onPress={() => setShowTimePicker(false)} />
+                    <View style={pickerStyles.sheet}>
+                        <View style={pickerStyles.sheetHeader}>
+                            <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                                <Text style={pickerStyles.doneBtn}>Done</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <DateTimePicker
+                            value={dueTime}
+                            mode="time"
+                            display="spinner"
+                            onChange={(_event, selected) => {
+                                if (selected) setDueTime(selected);
+                            }}
+                        />
+                    </View>
+                </Modal>
+            ) : (
+                <DateTimePicker
+                    value={dueTime}
+                    mode="time"
+                    display="default"
+                    onChange={(_event, selected) => {
+                        if (selected) setDueTime(selected);
+                        setShowTimePicker(false);
+                    }}
+                />
+            )
         )}
         </SafeAreaView>
     );
 }
+
+const pickerStyles = StyleSheet.create({
+    overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)" },
+    sheet: { backgroundColor: "#1c1c1e", borderTopLeftRadius: 16, borderTopRightRadius: 16, paddingBottom: 24 },
+    sheetHeader: { flexDirection: "row", justifyContent: "flex-end", padding: 12 },
+    doneBtn: { color: "#f97316", fontSize: 16, fontWeight: "600" },
+});

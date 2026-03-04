@@ -108,6 +108,12 @@ export default function SignInScreen() {
         <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
             <Text style={globalStyles.centeredLink}>Don't have an account? Sign Up</Text>
         </TouchableOpacity>
+
+        {/* Navigate to Sign Up */}
+        <TouchableOpacity onPress={ () => router.push("/(auth)/forgotPassword") }>
+            <Text style={globalStyles.centeredLink}>Forgot password?</Text>
+        </TouchableOpacity>
+
         </View>
     );
 }
