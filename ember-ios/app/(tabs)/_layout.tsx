@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { Image } from 'react-native';
 
@@ -9,6 +9,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
 
   return (
     <Tabs
@@ -22,6 +23,9 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: () => <Image source={require('@/assets/images/icons8-home-64.png')} style={{ width: 28, height: 28 }} />,
+        }}
+        listeners={{
+          tabPress: () => router.navigate({ pathname: '/(tabs)', params: { date: undefined } }),
         }}
       />
       <Tabs.Screen

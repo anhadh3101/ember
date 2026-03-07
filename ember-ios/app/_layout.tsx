@@ -23,7 +23,7 @@ function RootNavigator() {
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={!isLoggedIn}>
+      <Stack.Protected guard={isLoggedIn}>
         <Stack.Screen name="(calendar)" options={{ headerShown: false }} />
       </Stack.Protected>
       {/* <Stack.Screen name="+not-found" /> */}

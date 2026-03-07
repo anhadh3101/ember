@@ -1,14 +1,14 @@
 import { Image } from "react-native";
 import { Alert, View, Text, TouchableOpacity } from 'react-native'
 import { useCallback, useRef, useState } from 'react'
-import { useFocusEffect, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import ParallaxScrollView from '@/components/parallax-scroll-view'
 import { ThemedText } from '@/components/themed-text'
 import { ThemedView } from '@/components/themed-view'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { GestureHandlerRootView, TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler'
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
 import { reload } from 'expo-router/build/global-state/routing'
 import { globalStyles, Palette } from '@/constants/styles'
@@ -90,9 +90,12 @@ export default function HomeScreen() {
     const { session } = useAuthContext()
     const router = useRouter();
     const { top } = useSafeAreaInsets();
+    const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
 
     const now = new Date();
     const dateToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const selectedDate = dateParam ?? dateToday;
+    const displayDate = dateParam ? new Date(`${dateParam}T00:00:00`) : now;
 
     const [todoTasks, setTodoTasks] = useState<Task[]>([]);
     const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
@@ -246,7 +249,7 @@ export default function HomeScreen() {
                 .from('tasks')
                 .select('*')
                 .eq('user_id', session?.user.id)
-                .eq('due_date', dateToday);
+                .eq('due_date', selectedDate);
     
             if (error) throw error;
 
@@ -277,7 +280,7 @@ export default function HomeScreen() {
                 pushDeletesBatch();
                 console.log('[index.tsx] Pushing updates and deletes if any.');
             }
-        }, [session])
+        }, [session, selectedDate])
     );
 
     return (
@@ -286,11 +289,11 @@ export default function HomeScreen() {
                 headerBackgroundColor={{ light: '#f3f4f6', dark: '#1f2937' }}
                 headerImage={
                     <View style={[globalStyles.headerContent, { paddingTop: top }]}>
-                        <TouchableOpacity style={globalStyles.calendarButton} onPress={() => router.replace('/(calendar)/calendar')}>
+                        <TouchableOpacity style={globalStyles.calendarButton} onPress={() => router.replace('/(calendar)')}>
                             <Image source={require('@/assets/images/icons8-calendar-64.png')} style={{ width: 26, height: 26 }} />
                         </TouchableOpacity>
                         <Text style={globalStyles.headerDate}>
-                            {now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                            {displayDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                         </Text>
                     </View>
                 }
