@@ -7,9 +7,11 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    ScrollView,
     StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Linking from "expo-linking";
 import { supabase } from "@/lib/supabase";
 import { globalStyles, Palette, Spacing, FontSize, FontWeight, Radii } from "@/constants/styles";
 
@@ -35,7 +37,9 @@ export default function ForgotPasswordScreen() {
         setLoading(true);
         try {
             const { data, error } = await supabase.auth
-                .resetPasswordForEmail(cleanEmail);
+                .resetPasswordForEmail(cleanEmail, {
+                    redirectTo: "exp://192.168.1.86:8081/*emberios://(auth)/resetPassword",
+                });
 
             if (error) throw error;
             setSent(true);
@@ -49,7 +53,7 @@ export default function ForgotPasswordScreen() {
 
     if (sent) {
         return (
-            <View style={globalStyles.screenCenter}>
+            <ScrollView contentContainerStyle={globalStyles.screenCenter} keyboardShouldPersistTaps="handled">
                 <View style={styles.iconWrap}>
                     <Ionicons name="mail-outline" size={40} color={Palette.primary} />
                 </View>
@@ -64,12 +68,12 @@ export default function ForgotPasswordScreen() {
                 <TouchableOpacity onPress={() => setSent(false)}>
                     <Text style={globalStyles.centeredLink}>Resend email</Text>
                 </TouchableOpacity>
-            </View>
+            </ScrollView>
         );
     }
 
     return (
-        <View style={globalStyles.screenCenter}>
+        <ScrollView contentContainerStyle={globalStyles.screenCenter} keyboardShouldPersistTaps="handled">
             <View style={styles.iconWrap}>
                 <Ionicons name="lock-closed-outline" size={40} color={Palette.primary} />
             </View>
@@ -107,7 +111,7 @@ export default function ForgotPasswordScreen() {
             <TouchableOpacity onPress={() => router.back()}>
                 <Text style={globalStyles.centeredLink}>Back to Sign In</Text>
             </TouchableOpacity>
-        </View>
+        </ScrollView>
     );
 }
 

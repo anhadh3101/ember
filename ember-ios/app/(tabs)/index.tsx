@@ -244,6 +244,7 @@ export default function HomeScreen() {
 
     async function fetchTasks() {
         try {
+            console.log(`\n[index.tsx (fetchTasks)] Fetching tasks for ${selectedDate}...`);
             // Fetch the tasks from the backend that need to be carried out for that day.
             const { data, error } = await supabase
                 .from('tasks')

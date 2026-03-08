@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { useRouter } from "expo-router";
 import {
-    View,
     Text,
     TextInput,
     TouchableOpacity,
     ActivityIndicator,
     Alert,
+    ScrollView,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { globalStyles, Palette } from "@/constants/styles";
@@ -72,7 +72,7 @@ export default function SignInScreen() {
     }
 
     return (
-        <View style={globalStyles.screenCenter}>
+        <ScrollView contentContainerStyle={globalStyles.screenCenter} keyboardShouldPersistTaps="handled">
         <Text style={globalStyles.pageTitle}>Sign In</Text>
 
         {/* Email */}
@@ -114,6 +114,6 @@ export default function SignInScreen() {
             <Text style={globalStyles.centeredLink}>Forgot password?</Text>
         </TouchableOpacity>
 
-        </View>
+        </ScrollView>
     );
 }

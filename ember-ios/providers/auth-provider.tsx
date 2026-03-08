@@ -7,6 +7,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
   const [session, setSession] = useState<Session | undefined | null>()
   const [profile, setProfile] = useState<any>()
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [needsPasswordReset, setNeedsPasswordReset] = useState(false)
 
   // Fetch the session once, and subscribe to auth state changes
   useEffect(() => {
@@ -32,6 +33,11 @@ export default function AuthProvider({ children }: PropsWithChildren) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', { event: _event, session })
+      if (_event === 'PASSWORD_RECOVERY') {
+        setNeedsPasswordReset(true)
+      } else if (_event === 'USER_UPDATED') {
+        setNeedsPasswordReset(false)
+      }
       setSession(session)
     })
 
@@ -71,6 +77,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         isLoading,
         profile,
         isLoggedIn: session != undefined,
+        needsPasswordReset,
       }}
     >
       {children}
