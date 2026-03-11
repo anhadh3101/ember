@@ -196,6 +196,28 @@ export const globalStyles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: Spacing.xxl },
   emptyText: { color: Palette.textMuted, fontSize: FontSize.md },
 
+  // ── Filter Chips ─────────────────────────────────────────────────────────────
+  filterRow: { marginBottom: Spacing.sm },
+  filterContent: { paddingHorizontal: Spacing.lg, gap: Spacing.sm },
+  filterChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Palette.border,
+    backgroundColor: Palette.background,
+  },
+  filterChipActive: {
+    backgroundColor: Palette.primary,
+    borderColor: Palette.primary,
+  },
+  filterChipText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semibold,
+    color: Palette.textSubtle,
+  },
+  filterChipTextActive: { color: Palette.white },
+
   // ── Calendar ─────────────────────────────────────────────────────────────────
   calendarHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.xl },
   calendarBackBtn: { padding: 6 },
@@ -249,4 +271,35 @@ export const globalStyles = StyleSheet.create({
   settingsInfoValue: { fontSize: FontSize.sm, color: Palette.text, fontWeight: FontWeight.semibold, maxWidth: '60%' as any, textAlign: 'right' },
   settingsInfoValueMono: { fontFamily: 'Courier', color: Palette.textSubtle },
   settingsDivider: { height: 1, backgroundColor: Palette.border, marginHorizontal: Spacing.lg },
+
+  // ── Sort Dropdown ─────────────────────────────────────────────────────────────
+  filterBar: { flexDirection: 'column', marginBottom: Spacing.sm },
+  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.lg, marginTop: Spacing.xs },
+  sortBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radii.full,
+    borderWidth: 1,
+    borderColor: Palette.border,
+    backgroundColor: Palette.background,
+  },
+  sortBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.semibold, color: Palette.textSubtle, maxWidth: 120 },
+  sortBtnChevron: { fontSize: FontSize.xs, color: Palette.textSubtle },
+  sortOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.25)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 140, paddingRight: Spacing.lg },
+  sortMenu: {
+    backgroundColor: Palette.background,
+    borderRadius: Radii.xl,
+    borderWidth: 1,
+    borderColor: Palette.border,
+    overflow: 'hidden',
+    ...Shadow.md,
+    minWidth: 190,
+  },
+  sortMenuItem: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md + 2 },
+  sortMenuItemActive: { backgroundColor: Palette.primaryLight },
+  sortMenuItemText: { fontSize: FontSize.sm, color: Palette.text },
+  sortMenuItemTextActive: { color: Palette.primary, fontWeight: FontWeight.semibold },
 });

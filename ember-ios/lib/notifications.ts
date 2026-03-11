@@ -10,7 +10,7 @@ Notifications.setNotificationHandler({
     }),
 });
 
-function remindWhenToMinutes(remindWhen: string): number {
+export function remindWhenToMinutes(remindWhen: string): number {
     const map: Record<string, number> = {
         "1m": 1, "5m": 5, "10m": 10, "15m": 15, "30m": 30, "45m": 45, "1h": 60,
     };

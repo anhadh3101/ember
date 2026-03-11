@@ -46,7 +46,7 @@ export default function CalendarScreen() {
 
             return data;
         } catch (error) {
-            console.error(`[/calendar/index.tsx (getDatesWithTasks)] Error: \n`, error);
+            console.error(`[/misc/index.tsx (getDatesWithTasks)] Error: \n`, error);
         }
     }
 

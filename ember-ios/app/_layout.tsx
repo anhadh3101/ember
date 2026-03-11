@@ -50,7 +50,7 @@ function RootNavigator() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       </Stack.Protected>
       <Stack.Protected guard={isLoggedIn && !needsPasswordReset}>
-        <Stack.Screen name="(calendar)" options={{ headerShown: false }} />
+        <Stack.Screen name="(misc)" options={{ headerShown: false }} />
       </Stack.Protected>
       {/* <Stack.Screen name="+not-found" /> */}
     </Stack>

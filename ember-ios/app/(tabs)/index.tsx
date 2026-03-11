@@ -1,5 +1,5 @@
-import { Image } from "react-native";
-import { Alert, View, Text, TouchableOpacity } from 'react-native'
+import { Image, Modal } from "react-native";
+import { Alert, View, Text, TouchableOpacity, ScrollView } from 'react-native'
 import { useCallback, useRef, useState } from 'react'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -10,7 +10,6 @@ import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { GestureHandlerRootView, TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler'
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
-import { reload } from 'expo-router/build/global-state/routing'
 import { globalStyles, Palette } from '@/constants/styles'
 import { cancelTaskNotification, scheduleTaskNotification } from '@/lib/notifications'
 
@@ -20,6 +19,24 @@ const PRIORITY_COLORS: Record<string, string> = {
     HIGH: Palette.danger,
 }
 
+const SORT_OPTIONS = [
+    { key: 'PRIORITY_DESC', label: 'Priority: High → Low' },
+    { key: 'PRIORITY_ASC',  label: 'Priority: Low → High' },
+    { key: 'TIME_ASC',      label: 'Time: Earliest First' },
+    { key: 'TIME_DESC',     label: 'Time: Latest First'   },
+] as const;
+
+type SortKey = typeof SORT_OPTIONS[number]['key'];
+const PRIORITY_ORDER: Record<string, number> = {
+    HIGH: 0,
+    MEDIUM: 1,
+    LOW: 2,
+};
+
+const CATEGORIES = ['ALL', 'PERSONAL', 'WORK', 'FITNESS'] as const;
+type Category = typeof CATEGORIES[number];
+
+// TYPE DEFINITIONS
 type Task = {
     task_id: string
     title: string
@@ -39,9 +56,13 @@ type TaskCardProps = {
     onEdit: (task: Task) => void
 }
 
+/**
+ * This is the task card component that stores the UI for each task.
+ */
 function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
     const lastTap = useRef(0);
 
+    // The following function handles the double tap feature.
     function handlePress() {
         const now = Date.now();
         if (now - lastTap.current < 300) {
@@ -87,8 +108,8 @@ function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
 }
 
 export default function HomeScreen() {
-    const { session } = useAuthContext()
     const router = useRouter();
+    const { session } = useAuthContext()
     const { top } = useSafeAreaInsets();
     const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
 
@@ -97,31 +118,45 @@ export default function HomeScreen() {
     const selectedDate = dateParam ?? dateToday;
     const displayDate = dateParam ? new Date(`${dateParam}T00:00:00`) : now;
 
+    // List of sorted and filtered tasks.
     const [todoTasks, setTodoTasks] = useState<Task[]>([]);
     const [completedTasks, setCompletedTasks] = useState<Task[]>([]);
     const [resetKey, setResetKey] = useState(0);
+    const [selectedCategory, setSelectedCategory] = useState<Category>('ALL');
 
+    const [sortBy, setSortBy] = useState<SortKey>('TIME_ASC');
+    const [showSortMenu, setShowSortMenu] = useState(false);
+
+    // If Selected category is ALL, return all tasks otherwise filter the fetched tasks.
+    const filterByCategory = (tasks: Task[]) =>
+        selectedCategory === 'ALL' ? tasks : tasks.filter(t => t.category === selectedCategory);
+
+    const sortTasks = (tasks: Task[]) => [...tasks].sort((a, b) => {
+        switch (sortBy) {
+            case 'PRIORITY_DESC': return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3);
+            case 'PRIORITY_ASC':  return (PRIORITY_ORDER[b.priority] ?? 3) - (PRIORITY_ORDER[a.priority] ?? 3);
+            case 'TIME_ASC':      return a.due_time.localeCompare(b.due_time);
+            case 'TIME_DESC':     return b.due_time.localeCompare(a.due_time);
+        }
+    });
+
+    const filteredTodo = sortTasks(filterByCategory(todoTasks));
+    const filteredCompleted = sortTasks(filterByCategory(completedTasks));
+
+    // Batches
     const updateBatch = useRef<Map<string, string>>(new Map());
     const deleteBatch = useRef<Map<string, string>>(new Map());
-
-    const byTime = (a: Task, b: Task) => a.due_time.localeCompare(b.due_time);
 
     // Stable callback — uses functional state updates so it never closes over stale state.
     const changeTaskStatus = useCallback((task: Task) => {
         const newStatus = task.status === 'TODO' ? 'COMPLETED' : 'TODO';
+        // Create a new task object with the updated status.
         const updatedTask = { ...task, status: newStatus };
-        const byTimeLocal = (a: Task, b: Task) => a.due_time.localeCompare(b.due_time);
 
         if (task.status === 'TODO') {
             // If we need to change the status to 'COMPLETED', then delete from todo list and add to completed list.
             setTodoTasks(prev => prev.filter(t => t.task_id !== task.task_id));
-            setCompletedTasks(prev => {
-                const insertIdx = prev.findIndex(t => byTimeLocal(t, task) > 0);
-                if (insertIdx === -1) return [...prev, updatedTask];
-                const next = [...prev];
-                next.splice(insertIdx, 0, updatedTask);
-                return next;
-            });
+            setCompletedTasks(prev => [...prev, updatedTask]);
             console.log("[index.tsx (changeTaskStatus)] Completed task: ", updatedTask.task_id);
 
             // Cancel the notification for this task since it is completed.
@@ -132,13 +167,7 @@ export default function HomeScreen() {
         } else {
             // Do the same if the task needs to be changed back to 'TODO'.
             setCompletedTasks(prev => prev.filter(t => t.task_id !== task.task_id));
-            setTodoTasks(prev => {
-                const insertIdx = prev.findIndex(t => byTimeLocal(t, task) > 0);
-                if (insertIdx === -1) return [...prev, updatedTask];
-                const next = [...prev];
-                next.splice(insertIdx, 0, updatedTask);
-                return next;
-            });
+            setTodoTasks(prev => [...prev, updatedTask]);
             console.log("[index.tsx (changeTaskStatus)] Uncompleted task: ", updatedTask.task_id);
 
             scheduleTaskNotification(updatedTask)
@@ -160,8 +189,7 @@ export default function HomeScreen() {
     // Handles the editing of a task, by redirecting to the edit screen.
     const handleEdit = useCallback((task: Task) => {
         router.push({
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            pathname: '/(calendar)/edit' as any,
+            pathname: '/(misc)/edit' as any,
             params: {
                 task_id: task.task_id,
                 title: task.title,
@@ -178,33 +206,43 @@ export default function HomeScreen() {
 
     // Adds the task to the delete batch and removes it from the todo and completed tasks on delete button press.
     const addToDeleteBatch = useCallback((task_id: string) => {
+        // Remove the task from the lists.
         setTodoTasks(prev => prev.filter(t => t.task_id !== task_id));
         setCompletedTasks(prev => prev.filter(t => t.task_id !== task_id));
+
+        // Check to see if there is any tasks in the update batch and remove it.
         updateBatch.current.delete(task_id);
+        // If the task is not in the delete batch then remove it.
         if (!deleteBatch.current.has(task_id)) {
             deleteBatch.current.set(task_id, task_id);
         }
     }, []);
 
+    // Push the updates to the database.
     async function pushUpdatesBatch() {
+        if (updateBatch.current.size === 0) return;
         try {
             // Push the updates in a list that will be used to make bulk request to the database.
             let updateRecords: { task_id: string; status: string; updated_at: string }[]= [];
             for (const [task_id, newStatus] of updateBatch.current) {
-                updateRecords.push({ task_id, status: newStatus, updated_at: new Date().toISOString() });
+                updateRecords.push({ task_id: task_id, status: newStatus, updated_at: new Date().toISOString() });
             }
 
             // Make the bulk request
-            const { data, error } = await supabase
-                .from('tasks')
-                .upsert(updateRecords)
-                .select()
+            const updates = [...updateBatch.current.entries()].map(([task_id, status]) =>
+                supabase
+                    .from('tasks')
+                    .update({ status, updated_at: new Date().toISOString() })
+                    .eq('task_id', task_id)
+            );
 
             // If there are any errors, then handle them.
-            if (error) throw error;
+            const results = await Promise.all(updates);
+            const failed = results.filter(r => r.error);
+            if (failed.length > 0) throw failed[0].error;
 
             // Clear the update batch on exit.
-            console.log(`[index.tsx (pushUpdatesBatch)] Upserted ${data.length} tasks in a batch of ${updateRecords.length}.`);
+            console.log(`[index.tsx (pushUpdatesBatch)] Updated ${updateBatch.current.size} tasks.`);
             updateBatch.current.clear();
         } catch (error) {
             console.error(error);
@@ -254,8 +292,8 @@ export default function HomeScreen() {
     
             if (error) throw error;
 
-            // Sort the tasks based on time and filtern them.
-            const sortedData = (data ?? []).sort(byTime);
+            // Sort the tasks based on time and filter them.
+            const sortedData = (data ?? []).sort((a, b) => a.due_time.localeCompare(b.due_time));
             setTodoTasks(sortedData.filter(t => t.status === 'TODO'));
             setCompletedTasks(sortedData.filter(t => t.status === 'COMPLETED'));
 
@@ -275,6 +313,9 @@ export default function HomeScreen() {
             pushUpdatesBatch();
             pushDeletesBatch();
 
+            // Reset the selected category.
+            setSelectedCategory('ALL');
+
             return () => {
                 // Push updates and deletes on exit.
                 pushUpdatesBatch();
@@ -290,7 +331,7 @@ export default function HomeScreen() {
                 headerBackgroundColor={{ light: '#f3f4f6', dark: '#1f2937' }}
                 headerImage={
                     <View style={[globalStyles.headerContent, { paddingTop: top }]}>
-                        <TouchableOpacity style={globalStyles.calendarButton} onPress={() => router.replace('/(calendar)')}>
+                        <TouchableOpacity style={globalStyles.calendarButton} onPress={() => router.replace('/(misc)')}>
                             <Image source={require('@/assets/images/icons8-calendar-64.png')} style={{ width: 26, height: 26 }} />
                         </TouchableOpacity>
                         <Text style={globalStyles.headerDate}>
@@ -299,12 +340,37 @@ export default function HomeScreen() {
                     </View>
                 }
             >
-                {todoTasks.length === 0 ? (
+                <View style={globalStyles.filterBar}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={globalStyles.filterContent}>
+                        {CATEGORIES.map(cat => (
+                            <TouchableOpacity
+                                key={cat}
+                                onPress={() => setSelectedCategory(cat)}
+                                style={[globalStyles.filterChip, selectedCategory === cat && globalStyles.filterChipActive]}
+                            >
+                                <Text style={[globalStyles.filterChipText, selectedCategory === cat && globalStyles.filterChipTextActive]}>
+                                    {cat}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+
+                    <View style={globalStyles.sortRow}>
+                        <TouchableOpacity style={globalStyles.sortBtn} onPress={() => setShowSortMenu(true)}>
+                            <Text style={globalStyles.sortBtnText} numberOfLines={1}>
+                                {SORT_OPTIONS.find(o => o.key === sortBy)?.label ?? 'Sort'}
+                            </Text>
+                            <Text style={globalStyles.sortBtnChevron}>⌄</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {filteredTodo.length === 0 ? (
                     <ThemedView style={globalStyles.emptyState}>
                         <ThemedText style={globalStyles.emptyText}>No tasks due today.</ThemedText>
                     </ThemedView>
                 ) : (
-                    todoTasks.map((task, index) => (
+                    filteredTodo.map((task, index) => (
                         <TaskCard
                             key={`${task.task_id ?? index}-${resetKey}`}
                             task={task}
@@ -315,12 +381,12 @@ export default function HomeScreen() {
                     ))
                 )}
 
-                {completedTasks.length === 0 ? (
+                {filteredCompleted.length === 0 ? (
                     <ThemedView style={globalStyles.emptyState}>
                         <ThemedText style={globalStyles.emptyText}>No completed tasks today.</ThemedText>
                     </ThemedView>
                 ) : (
-                    completedTasks.map((task, index) => (
+                    filteredCompleted.map((task, index) => (
                         <TaskCard
                             key={`${task.task_id ?? index}-${resetKey}`}
                             task={task}
@@ -331,6 +397,25 @@ export default function HomeScreen() {
                     ))
                 )}
             </ParallaxScrollView>
+
+            <Modal visible={showSortMenu} transparent animationType="fade" onRequestClose={() => setShowSortMenu(false)}>
+                <TouchableOpacity style={globalStyles.sortOverlay} activeOpacity={1} onPress={() => setShowSortMenu(false)}>
+                    <View style={globalStyles.sortMenu}>
+                        {SORT_OPTIONS.map(opt => (
+                            <TouchableOpacity
+                                key={opt.key}
+                                style={[globalStyles.sortMenuItem, sortBy === opt.key && globalStyles.sortMenuItemActive]}
+                                onPress={() => { setSortBy(opt.key); setShowSortMenu(false); }}
+                            >
+                                <Text style={[globalStyles.sortMenuItemText, sortBy === opt.key && globalStyles.sortMenuItemTextActive]}>
+                                    {opt.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
         </GestureHandlerRootView>
     )
 }
