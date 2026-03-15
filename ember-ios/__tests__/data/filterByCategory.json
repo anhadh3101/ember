@@ -1,0 +1,30 @@
+{
+  "tasks": [
+    { "task_id": "t1", "title": "Personal task", "description": "", "priority": "LOW", "category": "PERSONAL", "due_date": "2026-12-31", "due_time": "09:00", "status": "TODO", "remind_when": "15m" },
+    { "task_id": "t2", "title": "Work task", "description": "", "priority": "HIGH", "category": "WORK", "due_date": "2026-12-31", "due_time": "10:00", "status": "TODO", "remind_when": "15m" },
+    { "task_id": "t3", "title": "Fitness task", "description": "", "priority": "MEDIUM", "category": "FITNESS", "due_date": "2026-12-31", "due_time": "07:00", "status": "TODO", "remind_when": "15m" },
+    { "task_id": "t4", "title": "Another work task", "description": "", "priority": "LOW", "category": "WORK", "due_date": "2026-12-31", "due_time": "14:00", "status": "TODO", "remind_when": "15m" }
+  ],
+  "cases": [
+    {
+      "category": "ALL",
+      "description": "returns all tasks",
+      "expectedIds": ["t1", "t2", "t3", "t4"]
+    },
+    {
+      "category": "PERSONAL",
+      "description": "returns only personal tasks",
+      "expectedIds": ["t1"]
+    },
+    {
+      "category": "WORK",
+      "description": "returns only work tasks",
+      "expectedIds": ["t2", "t4"]
+    },
+    {
+      "category": "FITNESS",
+      "description": "returns only fitness tasks",
+      "expectedIds": ["t3"]
+    }
+  ]
+}

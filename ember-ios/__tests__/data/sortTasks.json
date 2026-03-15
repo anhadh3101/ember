@@ -1,0 +1,30 @@
+{
+  "tasks": [
+    { "task_id": "t1", "title": "Low priority early", "description": "", "priority": "LOW", "category": "PERSONAL", "due_date": "2026-12-31", "due_time": "08:00", "status": "TODO", "remind_when": "15m" },
+    { "task_id": "t2", "title": "High priority late", "description": "", "priority": "HIGH", "category": "WORK", "due_date": "2026-12-31", "due_time": "17:00", "status": "TODO", "remind_when": "15m" },
+    { "task_id": "t3", "title": "Medium priority mid", "description": "", "priority": "MEDIUM", "category": "FITNESS", "due_date": "2026-12-31", "due_time": "12:00", "status": "TODO", "remind_when": "15m" },
+    { "task_id": "t4", "title": "High priority early", "description": "", "priority": "HIGH", "category": "PERSONAL", "due_date": "2026-12-31", "due_time": "07:00", "status": "TODO", "remind_when": "15m" }
+  ],
+  "cases": [
+    {
+      "sortBy": "PRIORITY_DESC",
+      "description": "high priority tasks come first",
+      "expectedOrder": ["t2", "t4", "t3", "t1"]
+    },
+    {
+      "sortBy": "PRIORITY_ASC",
+      "description": "low priority tasks come first",
+      "expectedOrder": ["t1", "t3", "t2", "t4"]
+    },
+    {
+      "sortBy": "TIME_ASC",
+      "description": "earliest due time comes first",
+      "expectedOrder": ["t4", "t1", "t3", "t2"]
+    },
+    {
+      "sortBy": "TIME_DESC",
+      "description": "latest due time comes first",
+      "expectedOrder": ["t2", "t3", "t1", "t4"]
+    }
+  ]
+}

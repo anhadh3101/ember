@@ -1,0 +1,46 @@
+[
+  {
+    "task": { "task_id": "t1", "title": "Team standup", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "15m" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t2", "title": "Call client", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "1m" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t3", "title": "Call client", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "5m" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t4", "title": "Call client", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "10m" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t5", "title": "Call client", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "30m" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t6", "title": "Call client", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "45m" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t7", "title": "Call client", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "1h" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t8", "title": "No reminder task", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": null },
+    "expected": "not_scheduled"
+  },
+  {
+    "task": { "task_id": "t9", "title": "Past due task", "due_date": "2020-01-01", "due_time": "09:00", "remind_when": "15m" },
+    "expected": "not_scheduled"
+  },
+  {
+    "task": { "task_id": "t10", "title": "Unknown remind_when", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "3h" },
+    "expected": "scheduled"
+  },
+  {
+    "task": { "task_id": "t11", "title": "Empty remind_when", "due_date": "2026-12-31", "due_time": "10:00", "remind_when": "" },
+    "expected": "not_scheduled"
+  }
+]

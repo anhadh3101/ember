@@ -1,4 +1,7 @@
 import { cancelTaskNotification, scheduleTaskNotification, remindWhenToMinutes } from "../lib/notifications";
+import * as Notifications from "expo-notifications";
+import testCases from "./data/scheduleTaskNotification.json";
+import cancelTestCases from "./data/cancelTaskNotification.json";
 
 jest.mock("expo-notifications", () => ({
     setNotificationHandler: jest.fn(),
@@ -24,8 +27,36 @@ describe("remindWhenToMinutes", () => {
     });
 });
 
-describe("scheduleTaskNotification", () => {
-    it("schedules a task notification", async () => {
+describe("cancelTaskNotification", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
 
+    test.each(cancelTestCases)("Task '$task_id' ($description): $expected", async ({ task_id, is_scheduled }) => {
+        if (is_scheduled) {
+            (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValueOnce([{ identifier: task_id }]);
+        }
+
+        await cancelTaskNotification(task_id);
+
+        expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(task_id);
+    });
+});
+
+describe("scheduleTaskNotification", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+
+    test.each(testCases)("Task $task.task_id ($task.remind_when): $expected", async ({ task, expected }) => {
+        await scheduleTaskNotification(task);
+
+        if (expected === "scheduled") {
+            expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+                expect.objectContaining({ identifier: task.task_id })
+            );
+        } else {
+            expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+        }
     });
 });

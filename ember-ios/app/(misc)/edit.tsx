@@ -20,7 +20,7 @@ const PRIORITIES = ["LOW", "MEDIUM", "HIGH"];
 const CATEGORIES = ["PERSONAL", "WORK", "FITNESS"];
 const REMIND_OPTIONS = ["1m", "5m", "10m", "15m", "30m", "45m", "1h"];
 
-function parseTimeString(timeStr: string): Date {
+export function parseTimeString(timeStr: string): Date {
     const [hours, minutes] = timeStr.split(":").map(Number);
     const d = new Date();
     d.setHours(hours ?? 0, minutes ?? 0, 0, 0);

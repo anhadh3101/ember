@@ -1,0 +1,32 @@
+[
+  {
+    "input": "09:30",
+    "expected": { "hours": 9, "minutes": 30 },
+    "description": "standard morning time"
+  },
+  {
+    "input": "00:00",
+    "expected": { "hours": 0, "minutes": 0 },
+    "description": "midnight"
+  },
+  {
+    "input": "23:59",
+    "expected": { "hours": 23, "minutes": 59 },
+    "description": "end of day"
+  },
+  {
+    "input": "12:00",
+    "expected": { "hours": 12, "minutes": 0 },
+    "description": "noon"
+  },
+  {
+    "input": "08:05",
+    "expected": { "hours": 8, "minutes": 5 },
+    "description": "single digit minute"
+  },
+  {
+    "input": "09:30:00",
+    "expected": { "hours": 9, "minutes": 30 },
+    "description": "time string with seconds (seconds ignored)"
+  }
+]

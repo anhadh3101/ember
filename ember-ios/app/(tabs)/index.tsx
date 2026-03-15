@@ -13,7 +13,7 @@ import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeabl
 import { globalStyles, Palette } from '@/constants/styles'
 import { cancelTaskNotification, scheduleTaskNotification } from '@/lib/notifications'
 
-const PRIORITY_COLORS: Record<string, string> = {
+export const PRIORITY_COLORS: Record<string, string> = {
     LOW: Palette.success,
     MEDIUM: Palette.warning,
     HIGH: Palette.danger,
@@ -27,7 +27,7 @@ const SORT_OPTIONS = [
 ] as const;
 
 type SortKey = typeof SORT_OPTIONS[number]['key'];
-const PRIORITY_ORDER: Record<string, number> = {
+export const PRIORITY_ORDER: Record<string, number> = {
     HIGH: 0,
     MEDIUM: 1,
     LOW: 2,
@@ -107,6 +107,21 @@ function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
     );
 }
 
+export function filterByCategory(tasks: Task[], category: Category): Task[] {
+    return category === 'ALL' ? tasks : tasks.filter(t => t.category === category);
+}
+
+export function sortTasks(tasks: Task[], sortBy: SortKey): Task[] {
+    return [...tasks].sort((a, b) => {
+        switch (sortBy) {
+            case 'PRIORITY_DESC': return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3);
+            case 'PRIORITY_ASC':  return (PRIORITY_ORDER[b.priority] ?? 3) - (PRIORITY_ORDER[a.priority] ?? 3);
+            case 'TIME_ASC':      return a.due_time.localeCompare(b.due_time);
+            case 'TIME_DESC':     return b.due_time.localeCompare(a.due_time);
+        }
+    });
+}
+
 export default function HomeScreen() {
     const router = useRouter();
     const { session } = useAuthContext()
@@ -127,21 +142,8 @@ export default function HomeScreen() {
     const [sortBy, setSortBy] = useState<SortKey>('TIME_ASC');
     const [showSortMenu, setShowSortMenu] = useState(false);
 
-    // If Selected category is ALL, return all tasks otherwise filter the fetched tasks.
-    const filterByCategory = (tasks: Task[]) =>
-        selectedCategory === 'ALL' ? tasks : tasks.filter(t => t.category === selectedCategory);
-
-    const sortTasks = (tasks: Task[]) => [...tasks].sort((a, b) => {
-        switch (sortBy) {
-            case 'PRIORITY_DESC': return (PRIORITY_ORDER[a.priority] ?? 3) - (PRIORITY_ORDER[b.priority] ?? 3);
-            case 'PRIORITY_ASC':  return (PRIORITY_ORDER[b.priority] ?? 3) - (PRIORITY_ORDER[a.priority] ?? 3);
-            case 'TIME_ASC':      return a.due_time.localeCompare(b.due_time);
-            case 'TIME_DESC':     return b.due_time.localeCompare(a.due_time);
-        }
-    });
-
-    const filteredTodo = sortTasks(filterByCategory(todoTasks));
-    const filteredCompleted = sortTasks(filterByCategory(completedTasks));
+    const filteredTodo = sortTasks(filterByCategory(todoTasks, selectedCategory), sortBy);
+    const filteredCompleted = sortTasks(filterByCategory(completedTasks, selectedCategory), sortBy);
 
     // Batches
     const updateBatch = useRef<Map<string, string>>(new Map());
