@@ -28,18 +28,18 @@ pipeline {
             junit allowEmptyResults: true, testResults: 'ember-ios/junit.xml'
         }
         success {
-            githubCommitStatusSetter(
+            step([$class: 'GitHubCommitStatusSetter',
                 reposSource: [$class: 'ManuallyEnteredRepositorySource', url: 'https://github.com/anhadh3101/ember'],
                 contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'ci/jenkins/tests'],
                 statusResultSource: [$class: 'ConditionalStatusResultSource', results: [[$class: 'AnyBuildResult', message: 'Tests passed', state: 'SUCCESS']]]
-            )
+            ])
         }
         failure {
-            githubCommitStatusSetter(
+            step([$class: 'GitHubCommitStatusSetter',
                 reposSource: [$class: 'ManuallyEnteredRepositorySource', url: 'https://github.com/anhadh3101/ember'],
                 contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'ci/jenkins/tests'],
                 statusResultSource: [$class: 'ConditionalStatusResultSource', results: [[$class: 'AnyBuildResult', message: 'Tests failed', state: 'FAILURE']]]
-            )
+            ])
         }
     }
 }
