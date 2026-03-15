@@ -23,4 +23,9 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            junit 'ember-ios/junit.xml'
+        }
+    }
 }
