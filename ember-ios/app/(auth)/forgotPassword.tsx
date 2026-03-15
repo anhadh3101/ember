@@ -80,7 +80,7 @@ export default function ForgotPasswordScreen() {
 
             <Text style={globalStyles.pageTitle}>Forgot password?</Text>
             <Text style={styles.hint}>
-                Enter your email and we'll send you a link to reset your password.
+                Enter your email and we&apos;ll send you a link to reset your password.
             </Text>
 
             <Text style={globalStyles.formLabel}>Email</Text>

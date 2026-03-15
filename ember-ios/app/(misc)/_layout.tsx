@@ -5,6 +5,7 @@ export default function CalendarLayout() {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" />
             <Stack.Screen name="edit" />
+            <Stack.Screen name="backlog" />
         </Stack>
     );
 }

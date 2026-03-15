@@ -125,7 +125,7 @@ export default function CreateScreen() {
             <TouchableOpacity onPress={() => router.back()}>
                 <Text style={globalStyles.linkText}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={globalStyles.heading}>What need's reminding?</Text>
+            <Text style={globalStyles.heading}>What need&apos;s reminding?</Text>
             </View>
 
             {/* Title */}
@@ -224,7 +224,7 @@ export default function CreateScreen() {
 
             {/* Submit */}
             <TouchableOpacity style={globalStyles.btn} onPress={handleSubmit}>
-            <Text style={globalStyles.btnText}>Let's Go!</Text>
+            <Text style={globalStyles.btnText}>Let&apos;s Go!</Text>
             </TouchableOpacity>
 
         </ScrollView>

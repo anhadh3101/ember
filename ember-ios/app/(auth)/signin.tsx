@@ -106,7 +106,7 @@ export default function SignInScreen() {
 
         {/* Navigate to Sign Up */}
         <TouchableOpacity onPress={() => router.push("/(auth)/signup")}>
-            <Text style={globalStyles.centeredLink}>Don't have an account? Sign Up</Text>
+            <Text style={globalStyles.centeredLink}>Don&apos;t have an account? Sign Up</Text>
         </TouchableOpacity>
 
         {/* Navigate to Sign Up */}

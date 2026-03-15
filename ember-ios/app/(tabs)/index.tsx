@@ -416,6 +416,10 @@ export default function HomeScreen() {
                 </TouchableOpacity>
             </Modal>
 
+            <TouchableOpacity style={globalStyles.backlogFab} onPress={() => router.push('/(misc)/backlog' as any)} activeOpacity={0.8}>
+                <Image source={require('@/assets/images/backlog.png')} style={{ width: 32, height: 32 }} />
+            </TouchableOpacity>
+
         </GestureHandlerRootView>
     )
 }
