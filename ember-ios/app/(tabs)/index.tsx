@@ -1,5 +1,5 @@
 import { Image, Modal } from "react-native";
-import { Alert, View, Text, TouchableOpacity, ScrollView } from 'react-native'
+import { Alert, View, Text, TouchableOpacity } from 'react-native'
 import { useCallback, useRef, useState } from 'react'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { GestureHandlerRootView, TouchableOpacity as GHTouchableOpacity } from 'react-native-gesture-handler'
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable'
 import { globalStyles, Palette } from '@/constants/styles'
+import { Ionicons } from '@expo/vector-icons'
 import { cancelTaskNotification, scheduleTaskNotification } from '@/lib/notifications'
 
 export const PRIORITY_COLORS: Record<string, string> = {
@@ -34,6 +35,12 @@ export const PRIORITY_ORDER: Record<string, number> = {
 };
 
 const CATEGORIES = ['ALL', 'PERSONAL', 'WORK', 'FITNESS'] as const;
+const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+    ALL:      'apps-outline',
+    PERSONAL: 'person-outline',
+    WORK:     'briefcase-outline',
+    FITNESS:  'barbell-outline',
+};
 type Category = typeof CATEGORIES[number];
 
 // TYPE DEFINITIONS
@@ -107,10 +114,12 @@ function TaskCard({ task, onStatusChange, onDelete, onEdit }: TaskCardProps) {
     );
 }
 
+// Function to filter the tasks based on the selected category.
 export function filterByCategory(tasks: Task[], category: Category): Task[] {
     return category === 'ALL' ? tasks : tasks.filter(t => t.category === category);
 }
 
+// Function to sort the tasks based on the selected sort option.
 export function sortTasks(tasks: Task[], sortBy: SortKey): Task[] {
     return [...tasks].sort((a, b) => {
         switch (sortBy) {
@@ -252,6 +261,7 @@ export default function HomeScreen() {
         }
     }
 
+    // Push the delete batch to the database.
     async function pushDeletesBatch() {
         try {
             // Add all the task ids to delete in a list.
@@ -282,6 +292,7 @@ export default function HomeScreen() {
         }
     }
 
+    // Fetch the tasks for the selected data and organize them in the 2 lists.
     async function fetchTasks() {
         try {
             console.log(`\n[index.tsx (fetchTasks)] Fetching tasks for ${selectedDate}...`);
@@ -343,26 +354,25 @@ export default function HomeScreen() {
                 }
             >
                 <View style={globalStyles.filterBar}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={globalStyles.filterContent}>
+                    <View style={globalStyles.filterContent}>
                         {CATEGORIES.map(cat => (
                             <TouchableOpacity
                                 key={cat}
                                 onPress={() => setSelectedCategory(cat)}
                                 style={[globalStyles.filterChip, selectedCategory === cat && globalStyles.filterChipActive]}
                             >
-                                <Text style={[globalStyles.filterChipText, selectedCategory === cat && globalStyles.filterChipTextActive]}>
-                                    {cat}
-                                </Text>
+                                <Ionicons
+                                    name={CATEGORY_ICONS[cat]}
+                                    size={16}
+                                    color={selectedCategory === cat ? Palette.white : Palette.textSubtle}
+                                />
                             </TouchableOpacity>
                         ))}
-                    </ScrollView>
+                    </View>
 
                     <View style={globalStyles.sortRow}>
                         <TouchableOpacity style={globalStyles.sortBtn} onPress={() => setShowSortMenu(true)}>
-                            <Text style={globalStyles.sortBtnText} numberOfLines={1}>
-                                {SORT_OPTIONS.find(o => o.key === sortBy)?.label ?? 'Sort'}
-                            </Text>
-                            <Text style={globalStyles.sortBtnChevron}>⌄</Text>
+                            <Text style={globalStyles.sortBtnChevron}>⇅</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

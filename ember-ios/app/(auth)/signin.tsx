@@ -44,6 +44,7 @@ export default function SignInScreen() {
         if (errors && errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
 
+    // Sing in using the supabase sdk.
     async function handleSignIn() {
         // Check if email and password are valid or not
         const validationErrors = validate(values);

@@ -28,6 +28,7 @@ export default function CalendarScreen() {
         });
     }, []);
 
+    // Handle when a day is pressed on the calendar.
     function handleDayPress(day: { dateString: string }) {
         setSelectedDate(day.dateString);
         router.replace({ pathname: '/(tabs)', params: { date: day.dateString } });
@@ -50,6 +51,7 @@ export default function CalendarScreen() {
         }
     }
 
+    // Mark the dates with tasks as marked and the selected date as selected
     const markedDates = {
         ...taskDots,
         [TODAY_STR]: {
@@ -77,6 +79,7 @@ export default function CalendarScreen() {
                 <View style={{ width: 34 }} />
             </View>
 
+            <View style={styles.centered}>
             <View style={styles.calendarCard}>
                 <Calendar
                     current={selectedDate}
@@ -101,6 +104,7 @@ export default function CalendarScreen() {
                     }}
                 />
             </View>
+            </View>
         </SafeAreaView>
     );
 }
@@ -115,8 +119,13 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: Palette.border,
     },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: Spacing.xl,
+        paddingBottom: 120,
+    },
     calendarCard: {
-        margin: Spacing.xl,
         borderRadius: Radii.xl,
         borderWidth: 1,
         borderColor: Palette.border,

@@ -5,13 +5,13 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
+const tintColorLight = '#0c64df';
 const tintColorDark = '#fff';
 
 export const Colors = {
   light: {
     text: '#11181C',
-    background: '#fef4eff2',
+    background: '#fffffff2',
     tint: tintColorLight,
     icon: '#687076',
     tabIconDefault: '#687076',

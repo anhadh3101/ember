@@ -77,11 +77,13 @@ export default function SignUpScreen() {
     const [errors, setErrors] = useState<FormErrors>({});
     const [loading, setLoading] = useState(false);
 
+    // Update the form values.
     function handleChange(field: keyof FormValues, text: string) {
         setValues((prev) => ({ ...prev, [field]: text }));
         if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
 
+    // Signup using the supabase sdk.
     async function handleSignUp() {
         const validationErrors = validate(values);
         if (Object.keys(validationErrors).length > 0) {

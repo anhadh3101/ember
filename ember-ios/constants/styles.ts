@@ -4,32 +4,32 @@ import { StyleSheet } from 'react-native';
 
 export const Palette = {
   // Brand
-  primary: '#8537f3',
-  primaryLight: '#eff6ff',
+  primary: '#6366f1',
+  primaryLight: '#eef2ff',
 
   // Semantic
-  danger: '#ef4444',
-  dangerLight: '#fef2f2',
+  danger: '#f43f5e',
+  dangerLight: '#fff1f2',
   warning: '#f59e0b',
   warningLight: '#fffbeb',
-  success: '#22c55e',
-  successLight: '#f0fdf4',
+  success: '#10b981',
+  successLight: '#ecfdf5',
 
   // Neutrals
   white: '#fff',
-  black: '#000',
-  text: '#111',
-  textSecondary: '#888',
-  textMuted: '#aaa',
-  textSubtle: '#666',
-  textFaint: '#999',
-  border: '#e5e5e5',
-  borderMuted: '#ccc',
-  background: '#fff',
-  backgroundMuted: '#f9f9f9',
+  black: '#0f172a',
+  text: '#0f172a',
+  textSecondary: '#64748b',
+  textMuted: '#94a3b8',
+  textSubtle: '#475569',
+  textFaint: '#94a3b8',
+  border: '#e2e8f0',
+  borderMuted: '#cbd5e1',
+  background: '#f1f5f9',
+  backgroundMuted: '#e2e8f0',
 
   // Shadows
-  shadow: '#000',
+  shadow: '#0f172a',
 } as const;
 
 // ─── Spacing ──────────────────────────────────────────────────────────────────
@@ -144,8 +144,11 @@ export const globalStyles = StyleSheet.create({
   dateText: { fontSize: FontSize.sm, color: '#333' },
 
   // ── Chips ─────────────────────────────────────────────────────────────────────
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
+  chipRow: { flexDirection: 'row', gap: Spacing.sm },
+  chipRowWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   chip: {
+    flex: 1,
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Palette.border,
     borderRadius: Radii.md,
@@ -198,8 +201,10 @@ export const globalStyles = StyleSheet.create({
 
   // ── Filter Chips ─────────────────────────────────────────────────────────────
   filterRow: { marginBottom: Spacing.sm },
-  filterContent: { paddingHorizontal: Spacing.lg, gap: Spacing.sm },
+  filterContent: { flex: 1, flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: Spacing.sm },
   filterChip: {
+    flex: 1,
+    alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radii.full,
@@ -212,7 +217,7 @@ export const globalStyles = StyleSheet.create({
     borderColor: Palette.primary,
   },
   filterChipText: {
-    fontSize: FontSize.xs,
+    fontSize: 10,
     fontWeight: FontWeight.semibold,
     color: Palette.textSubtle,
   },
@@ -273,8 +278,8 @@ export const globalStyles = StyleSheet.create({
   settingsDivider: { height: 1, backgroundColor: Palette.border, marginHorizontal: Spacing.lg },
 
   // ── Sort Dropdown ─────────────────────────────────────────────────────────────
-  filterBar: { flexDirection: 'column', marginBottom: Spacing.sm },
-  sortRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: Spacing.lg, marginTop: Spacing.xs },
+  filterBar: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.sm },
+  sortRow: { paddingRight: Spacing.lg },
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -350,4 +355,24 @@ export const globalStyles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   backlogFabBadgeText: { color: Palette.white, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+
+  // ── Analytics ────────────────────────────────────────────────────────────────
+  statGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, marginBottom: Spacing.xl },
+  statCard: {
+    backgroundColor: Palette.white, borderRadius: Radii.xl, borderWidth: 1,
+    borderColor: Palette.border, width: '48%' as any,
+    alignItems: 'center', paddingVertical: Spacing.xl, paddingHorizontal: Spacing.sm, ...Shadow.sm,
+  },
+  statValue: { fontSize: FontSize.display, fontWeight: FontWeight.bold, color: Palette.primary, marginBottom: Spacing.xs },
+  statLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Palette.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, textAlign: 'center' },
+  analyticsSection: { marginTop: Spacing.xl, marginBottom: Spacing.md },
+  analyticsSectionTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, color: Palette.text, marginBottom: Spacing.md },
+  chartCard: { backgroundColor: Palette.white, borderRadius: Radii.xl, borderWidth: 1, borderColor: Palette.border, padding: Spacing.lg, marginBottom: Spacing.md, ...Shadow.sm },
+  progressBarTrack: { height: 8, borderRadius: Radii.full, backgroundColor: Palette.border, marginTop: Spacing.xs, marginBottom: Spacing.md },
+  progressBarFill: { height: 8, borderRadius: Radii.full },
+  legendRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm },
+  legendLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  legendDot: { width: 10, height: 10, borderRadius: Radii.full, marginRight: Spacing.sm },
+  legendLabel: { fontSize: FontSize.sm, color: Palette.text, fontWeight: FontWeight.medium },
+  legendCount: { fontSize: FontSize.sm, color: Palette.textSecondary },
 });

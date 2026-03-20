@@ -47,6 +47,7 @@ export default function CreateScreen() {
 
     const clearError = (key: string) => setErrors((e) => ({ ...e, [key]: null }));
 
+    // Validate to see if the form fields can be uploaded.
     const validate = () => {
         const e: Record<string, string> = {};
         if (!title.trim()) e.title = "Title is required.";
@@ -55,6 +56,7 @@ export default function CreateScreen() {
         return Object.keys(e).length === 0;
     };
 
+    // Upload the task to Supabase.
     async function handleSubmit() {
         // Validate the form fields.
         if (!validate()) return;
@@ -96,6 +98,7 @@ export default function CreateScreen() {
         }
     }
 
+    // Format the time for the database.
     const formatTime = (date: Date) =>
         date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
@@ -209,11 +212,11 @@ export default function CreateScreen() {
             {/* Remind When */}
             <View style={globalStyles.field}>
             <Text style={globalStyles.label}>Remind Me Before</Text>
-            <View style={globalStyles.chipRow}>
+            <View style={globalStyles.chipRowWrap}>
                 {REMIND_OPTIONS.map((r) => (
                 <TouchableOpacity
                     key={r}
-                    style={[globalStyles.chip, remindWhen === r && globalStyles.chipActive]}
+                    style={[globalStyles.chip, { flex: 0 }, remindWhen === r && globalStyles.chipActive]}
                     onPress={() => setRemindWhen(r)}
                 >
                     <Text style={[globalStyles.chipText, remindWhen === r && globalStyles.chipTextActive]}>{r}</Text>
