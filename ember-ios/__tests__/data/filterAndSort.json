@@ -1,0 +1,50 @@
+{
+  "tasks": [
+    { "task_id": "w1", "title": "High work task",   "priority": "HIGH",   "category": "WORK",     "due_time": "10:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "15m" },
+    { "task_id": "w2", "title": "Low work task",    "priority": "LOW",    "category": "WORK",     "due_time": "08:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "15m" },
+    { "task_id": "w3", "title": "Medium work task", "priority": "MEDIUM", "category": "WORK",     "due_time": "14:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "30m" },
+    { "task_id": "p1", "title": "Personal late",    "priority": "MEDIUM", "category": "PERSONAL", "due_time": "17:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "15m" },
+    { "task_id": "p2", "title": "Personal early",   "priority": "LOW",    "category": "PERSONAL", "due_time": "06:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "15m" },
+    { "task_id": "p3", "title": "Personal urgent",  "priority": "HIGH",   "category": "PERSONAL", "due_time": "09:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "5m"  },
+    { "task_id": "f1", "title": "Fitness morning",  "priority": "MEDIUM", "category": "FITNESS",  "due_time": "07:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "15m" },
+    { "task_id": "f2", "title": "Fitness evening",  "priority": "LOW",    "category": "FITNESS",  "due_time": "18:00", "due_date": "2026-12-31", "status": "TODO", "description": "", "remind_when": "10m" }
+  ],
+  "cases": [
+    {
+      "category": "WORK",
+      "sortBy": "PRIORITY_DESC",
+      "description": "WORK tasks sorted by descending priority — high first",
+      "expectedIds": ["w1", "w3", "w2"]
+    },
+    {
+      "category": "WORK",
+      "sortBy": "TIME_ASC",
+      "description": "WORK tasks sorted by ascending time — earliest first",
+      "expectedIds": ["w2", "w1", "w3"]
+    },
+    {
+      "category": "PERSONAL",
+      "sortBy": "TIME_ASC",
+      "description": "PERSONAL tasks sorted by ascending time — earliest first",
+      "expectedIds": ["p2", "p3", "p1"]
+    },
+    {
+      "category": "PERSONAL",
+      "sortBy": "PRIORITY_ASC",
+      "description": "PERSONAL tasks sorted by ascending priority — low first",
+      "expectedIds": ["p2", "p1", "p3"]
+    },
+    {
+      "category": "FITNESS",
+      "sortBy": "TIME_DESC",
+      "description": "FITNESS tasks sorted by descending time — latest first",
+      "expectedIds": ["f2", "f1"]
+    },
+    {
+      "category": "ALL",
+      "sortBy": "PRIORITY_DESC",
+      "description": "ALL tasks sorted by descending priority — all high priority tasks first",
+      "expectedIds": ["w1", "p3", "w3", "p1", "f1", "w2", "p2", "f2"]
+    }
+  ]
+}

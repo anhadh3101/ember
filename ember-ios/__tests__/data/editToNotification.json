@@ -1,0 +1,56 @@
+[
+  {
+    "task_id": "t1",
+    "title": "Team standup",
+    "timeString": "14:00",
+    "due_date": "2099-12-31",
+    "remind_when": "15m",
+    "expected": "scheduled",
+    "description": "future task with standard remind_when — notification should be scheduled"
+  },
+  {
+    "task_id": "t2",
+    "title": "Morning run",
+    "timeString": "07:30",
+    "due_date": "2099-06-15",
+    "remind_when": "30m",
+    "expected": "scheduled",
+    "description": "future task with 30m reminder — notification should be scheduled"
+  },
+  {
+    "task_id": "t3",
+    "title": "Lunch meeting",
+    "timeString": "12:00",
+    "due_date": "2099-01-01",
+    "remind_when": "1h",
+    "expected": "scheduled",
+    "description": "future task with 1h reminder — notification should be scheduled"
+  },
+  {
+    "task_id": "t4",
+    "title": "Old meeting",
+    "timeString": "09:30",
+    "due_date": "2020-01-01",
+    "remind_when": "15m",
+    "expected": "not_scheduled",
+    "description": "past due date — notification should be skipped"
+  },
+  {
+    "task_id": "t5",
+    "title": "No reminder task",
+    "timeString": "10:00",
+    "due_date": "2099-12-31",
+    "remind_when": null,
+    "expected": "not_scheduled",
+    "description": "null remind_when — notification should be skipped"
+  },
+  {
+    "task_id": "t6",
+    "title": "Empty reminder task",
+    "timeString": "10:00",
+    "due_date": "2099-12-31",
+    "remind_when": "",
+    "expected": "not_scheduled",
+    "description": "empty string remind_when — notification should be skipped"
+  }
+]
