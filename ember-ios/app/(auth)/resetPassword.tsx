@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
     View,
     Text,
@@ -12,28 +12,16 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { globalStyles, Palette, Spacing, FontSize, Radii } from "@/constants/styles";
+import { useAuthContext } from "@/hooks/use-auth-context";
 
 export default function ResetPasswordScreen() {
-    const [ready, setReady] = useState(false);
+    const { needsPasswordReset: ready } = useAuthContext();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [passwordError, setPasswordError] = useState<string | undefined>();
     const [confirmError, setConfirmError] = useState<string | undefined>();
     const [loading, setLoading] = useState(false);
     const [done, setDone] = useState(false);
-
-    /**
-     * Step 2: Once the user is redirected back to the app, wait for the
-     * PASSWORD_RECOVERY event before allowing them to set a new password.
-     */
-    useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
-            if (event === "PASSWORD_RECOVERY") {
-                setReady(true);
-            }
-        });
-        return () => subscription.unsubscribe();
-    }, []);
 
     function validateAndSubmit() {
         let valid = true;

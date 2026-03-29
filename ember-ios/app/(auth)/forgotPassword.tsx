@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import {
     View,
@@ -11,7 +11,6 @@ import {
     StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Linking from "expo-linking";
 import { supabase } from "@/lib/supabase";
 import { globalStyles, Palette, Spacing, FontSize, FontWeight, Radii } from "@/constants/styles";
 
@@ -21,6 +20,15 @@ export default function ForgotPasswordScreen() {
     const [emailError, setEmailError] = useState<string | undefined>();
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
+
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+            if (event === "PASSWORD_RECOVERY") {
+                router.replace("/(auth)/resetPassword" as any);
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, []);
 
     function handleChange(text: string) {
         setEmail(text);
@@ -36,9 +44,9 @@ export default function ForgotPasswordScreen() {
 
         setLoading(true);
         try {
-            const { data, error } = await supabase.auth
+            const { error } = await supabase.auth
                 .resetPasswordForEmail(cleanEmail, {
-                    redirectTo: "exp://192.168.1.86:8081/*emberios://(auth)/resetPassword",
+                    redirectTo: "exp://192.168.1.86:8081",
                 });
 
             if (error) throw error;

@@ -7,6 +7,7 @@ export type AuthData = {
     isLoading: boolean
     isLoggedIn: boolean
     needsPasswordReset: boolean
+    setNeedsPasswordReset: (value: boolean) => void
 }
 
 export const AuthContext = createContext<AuthData>({
@@ -15,6 +16,7 @@ export const AuthContext = createContext<AuthData>({
     isLoading: true,
     isLoggedIn: false,
     needsPasswordReset: false,
+    setNeedsPasswordReset: () => {},
 })
 
 export const useAuthContext = () => useContext(AuthContext)

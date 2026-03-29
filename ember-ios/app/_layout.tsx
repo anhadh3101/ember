@@ -15,17 +15,31 @@ import { supabase } from '@/lib/supabase'
 
 // Separate RootNavigator so we can access the AuthContext
 function RootNavigator() {
-    const { isLoggedIn, needsPasswordReset } = useAuthContext()
+    const { isLoggedIn, needsPasswordReset, setNeedsPasswordReset } = useAuthContext()
     const router = useRouter()
 
-    // Handle deep link when user clicks the password reset email link.
-    // Supabase v2 uses PKCE by default: the reset link redirects back with ?code=xxx
     useEffect(() => {
         async function handleUrl(url: string) {
+            // PKCE flow: Supabase redirects with ?code=xxx
             const parsed = Linking.parse(url)
             const code = parsed.queryParams?.code as string | undefined
             if (code) {
-                await supabase.auth.exchangeCodeForSession(code)
+                const { error } = await supabase.auth.exchangeCodeForSession(code)
+                if (error) console.error('[handleUrl] exchangeCodeForSession error:', error)
+                return
+            }
+
+            // Implicit flow: Supabase redirects with #access_token=...&type=recovery
+            const hashIndex = url.indexOf('#')
+            if (hashIndex !== -1) {
+                const params = Object.fromEntries(new URLSearchParams(url.slice(hashIndex + 1)))
+                if (params.access_token && params.refresh_token && params.type === 'recovery') {
+                    setNeedsPasswordReset(true)
+                    await supabase.auth.setSession({
+                        access_token: params.access_token,
+                        refresh_token: params.refresh_token,
+                    })
+                }
             }
         }
 

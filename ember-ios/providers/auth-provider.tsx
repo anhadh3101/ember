@@ -78,6 +78,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         profile,
         isLoggedIn: session != undefined,
         needsPasswordReset,
+        setNeedsPasswordReset,
       }}
     >
       {children}
